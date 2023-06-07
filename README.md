@@ -33,7 +33,24 @@ Users can accumulate these tokens by performing specific actions or tasks.
 <br />
 Firstly, you have to insert/import a JavaScript Library in your Frontend that can interact with Blockchain Networks.
 <br />
+<br />
 The most popular choices are:
 - ethers.js
 - web3.js
+<br />
 However, nowdays more abstract libraries exist that make this process event easier (ex. wagmi react hooks)
+<br />
+Once, this step is completed you should have a Contract instance that the library constructed based on the 
+<br />
+address and ABI you provided as arguments.
+<br />
+<br />
+The next thing, is just to call the contract's functions whenever you need them in your code, for example:
+```
+function sumbitComment() {
+// Your previous code...
+// Suppossing your Contract Intance name is "rewardContract"
+const { wasSuccessful } = await rewardContract.addPoints("YourServiceName", "YourEventName");
+// The rest of your code...
+}
+```
