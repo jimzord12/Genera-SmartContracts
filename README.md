@@ -249,8 +249,8 @@ async function createNewCard(cardData) {
   });
 }
 ```
-
 <br />
+
 **_Step #4_**:
 <br />
 Finally, call the transferCard(_seller, _buyer, _cardId) contract method above or below the point where you handle the Card's ownership swap.
