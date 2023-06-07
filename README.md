@@ -10,6 +10,8 @@ It automatically performs transactions when predefined conditions are met, witho
 <br />
 It is typically built on blockchain technology, ensuring transparency, security, and efficiency.
 <br />
+<br />
+In simple words, it'a piece of immutable (can not be modified/changed) code that lives on the blockchain.
 
 ## Platform's Smart Contracts
 
@@ -43,13 +45,13 @@ Users can accumulate these tokens by performing specific actions or tasks.
 <br />
 You have to insert/import a JavaScript Library in your Frontend that can interact with Blockchain Networks.
 <br />
-<br />
+
 The most popular choices are:
 
 - ethers.js
 - web3.js
 
-However, nowdays more abstract libraries exist that make this process event easier (ex. wagmi react hooks)
+However, nowdays more abstract libraries exist that make this process even easier (ex. wagmi react hooks)
 <br />
 Once, this step is completed you should have a Contract instance that the library constructed based on the
 <br />
@@ -91,7 +93,7 @@ function sumbitComment() {
     // Supposing your Contract Instance name is "rewardContract"
     // This example uses ethers.js v5.7.2 syntax, but web3.js is very similar
     const { wasSuccessful } = await rewardContract.addPoints("MOOC", "videoWathced");
-<br />
+    
     if(!wasSuccessful) throw new Error("Contract Interaction Failed!")
     // The rest of your code...
 }
