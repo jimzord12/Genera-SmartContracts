@@ -19,8 +19,8 @@ Similar to a venting machine (Smart Contract) located in a park (Blockchain).
 
 Currently, our platform utilizes 2 Smart Contracts.
 
-- RewardingTool.sol
-- GameManager.sol
+- [RewardingTool.sol](#rewardingtool)
+- [GameManager.sol](#gamemanager)
 
 ### RewardingTool
 
