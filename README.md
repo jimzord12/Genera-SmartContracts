@@ -11,6 +11,10 @@ It automatically performs transactions when predefined conditions are met, witho
 It is typically built on blockchain technology, ensuring transparency, security, and efficiency.
 <br />
 
+In simple terms, it's a piece of immutable code that lives on the blockchain that provides functionality.
+<br />
+Similar to aventing machine(Smart Contract) located in a park(Blockchain).
+
 ## Platform's Smart Contracts
 
 Currently, our platform utilizes 2 Smart Contracts.
