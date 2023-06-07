@@ -154,7 +154,7 @@ function sumbitComment() {
 
 #### Contract Connection Data
 
-- Address:
+- Address: 0xdceAE859c3590A5E91688FFb166ec5708f1c2d99
 - Network: GENERA (Chain ID: 20231)
 - ABI: [click here](https://github.com/jimzord12/Genera-SmartContracts/blob/main/gameABI.json)
 
