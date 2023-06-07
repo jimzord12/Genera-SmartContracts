@@ -42,49 +42,50 @@ Users can accumulate these tokens by performing specific actions or tasks.
 
 #### For Devs 👨‍💻
 
+<br />
+
 **_Contract's API_**
 <br />
 
 - Write (State alterating) functions:
 
   ```javascript
-  function addPoints(string _serviceName, string _eventName) public returns (bool)
+  function createPlayer(string calldata _name, uint _server_id) public returns (void)
   ```
 
   ```javascript
-  function createUser(string _name) public returns (bool)
+  function createCard(uint _card_id, uint _template_id, bool _inMP) public returns (void)
   ```
 
   ```javascript
-  function createService(string  _serviceName) public returns (bool)
-  ```
-
-  ```javascript
-  function createEvent(string _eventName, string _serviceName, uint64 _multiplier) public returns (bool)
-  ```
-
-  ```javascript
-  function setBaseReward(uint _initValue) public returns (bool)
-  ```
-
-  ```javascript
-  function redeemer(uint _productPrice, string _serviceName) public returns (bool)
+  function transferCard(address _seller, address _buyer, uint _cardId) public returns (void)
   ```
 
 - Read/View (State non-alterating) functions:
 
   ```javascript
-  Getters for: baseReward, contractAddress, numServices, numUsers, services, users
+  Getters for: cardsNFT, cardsServer, contractAddress, numCards, numPlayers, owner, players
   ```
 
   ```javascript
-  function viewYourPoints(string _serviceName, string _eventName) public returns (bool)
+  function getCardOwner(uint _card_id) public view returns (address)
   ```
 
   ```javascript
-  function viewEvent(string _serviceName, string _eventName) public view returns (ServiceEvent)
+  // Polymorphism #1: uses the msg.sender address to look up the tokens
+  function getOwnedTokens() public view returns (uint256[] memory)
   ```
-<br />
+
+  ```javascript
+  // Polymorphism #2: uses the provided (_owner) address to look up the tokens
+  function getOwnedTokens(address _owner) public view returns (uint256[] memory)
+  ```
+
+  ```javascript
+  function getOwnedTokens() public view returns (uint256[] memory)
+  ```
+
+  <br />
 
 **_How to use the Contract_**
 <br />
@@ -168,6 +169,52 @@ one of the most battletested and trusted Solidty Open-source Libraries.
 
 #### For Devs 👨‍💻
 
+**_Contract's API_**
+<br />
+
+- Write (State alterating) functions:
+
+  ```javascript
+  function addPoints(string _serviceName, string _eventName) public returns (bool)
+  ```
+
+  ```javascript
+  function createUser(string _name) public returns (bool)
+  ```
+
+  ```javascript
+  function createService(string  _serviceName) public returns (bool)
+  ```
+
+  ```javascript
+  function createEvent(string _eventName, string _serviceName, uint64 _multiplier) public returns (bool)
+  ```
+
+  ```javascript
+  function setBaseReward(uint _initValue) public returns (bool)
+  ```
+
+  ```javascript
+  function redeemer(uint _productPrice, string _serviceName) public returns (bool)
+  ```
+
+- Read/View (State non-alterating) functions:
+
+  ```javascript
+  Getters for: baseReward, contractAddress, numServices, numUsers, services, users
+  ```
+
+  ```javascript
+  function viewYourPoints(string _serviceName, string _eventName) public returns (bool)
+  ```
+
+  ```javascript
+  function viewEvent(string _serviceName, string _eventName) public view returns (ServiceEvent)
+  ```
+
+  <br />
+  <br />
+
 **_How to use the Contract_**
 <br />
 
@@ -249,11 +296,12 @@ async function createNewCard(cardData) {
   });
 }
 ```
+
 <br />
 
 **_Step #4_**:
 <br />
-Finally, call the transferCard(_seller, _buyer, _cardId) contract method above or below the point where you handle the Card's ownership swap.
+Finally, call the transferCard(\_seller, \_buyer, \_cardId) contract method above or below the point where you handle the Card's ownership swap.
 <br />
 
 ```javascript
