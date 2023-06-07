@@ -41,7 +41,6 @@ Users can accumulate these tokens by performing specific actions or tasks.
 <br />
 
 #### For Devs 👨‍💻
-
 <br />
 
 **_Contract's API_**
