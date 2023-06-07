@@ -41,7 +41,6 @@ Users can accumulate these tokens by performing specific actions or tasks.
 <br />
 
 #### For Devs 👨‍💻
-<br />
 
 **_Contract's API_**
 <br />
@@ -85,6 +84,7 @@ Users can accumulate these tokens by performing specific actions or tasks.
   ```javascript
   function viewEvent(string _serviceName, string _eventName) public view returns (ServiceEvent)
   ```
+<br />
 
 **_How to use the Contract_**
 <br />
