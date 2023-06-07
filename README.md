@@ -16,3 +16,8 @@ Currently, our platform utilizes 2 Smart Contracts.
 
 ### RewardingTool
 
+#### Contract Connection Data
+- Address: 0x300302fEc3D905eb66Cb7743C636F8741B72dB3a
+- Network: GENERA (Chain ID: 20231)
+- ABI: [click here](https://github.com/jimzord12/Genera-SmartContracts/blob/main/rewardingABI.json)
+
