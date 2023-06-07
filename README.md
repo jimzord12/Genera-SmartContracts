@@ -192,7 +192,7 @@ address and ABI you provided as arguments.
 
 **_Step #2_**:
 <br />
-Call the createPlayer() contract function in the same place where your Player creation happens.
+Call the createPlayer(playerName, playerId) contract function in the same place where your Player creation happens.
 <br />
 
 ```javascript
@@ -201,6 +201,7 @@ async function createNewPlayer(playerData) {
   .then((response) => {
       if (response.ok === true) {
           try {
+            // ... Your code ...
               // The Player's ID from the server is required so that
               // the Contract and the Server stay in sync
               await gameContract.createPlayer(playerData.name, response.newPlayer.id)
@@ -218,41 +219,63 @@ async function createNewPlayer(playerData) {
 }
 ```
 
-For example, a Service could be: "MOOC" and one of its Events could be: "videoWathced"
-<br />
-
-This step is a bit **tricky**, because it is not similar to how frontend development works.
-<br />
-This is because the Smart Contract's storage is not limited to only memory
-<br />
-(meaning that it will be erased when the user closes the browser tab or window).
-<br />
-Most of the time, we need to permanetly store information.
-<br />
-The easiest way to create these Service and Event objects is through the [Remix IDE](https://remix.ethereum.org)
-<br />
-
-This video demonstrates how to perform the mentioned operations: [emptyVideoLink]()
-<br />
-
 <br />
 
 **_Step #3_**:
 <br />
-Finally, the only thing left to do is to call the contract's functions whenever you need them in your code, for example:
+Call the createCard(card_id, template_id, inMP) contract method above or below the point where you create the new Card object.
 <br />
 
 ```javascript
-function sumbitComment() {
-  // Your previous code...
-  // Supposing your Contract Instance name is "rewardContract"
-  // This example uses ethers.js v5.7.2 syntax, but web3.js is very similar
-  const { wasSuccessful } = await rewardContract.addPoints("MOOC", "videoWathced");
-<br />
-  if(!wasSuccessful) throw new Error("Contract Interaction Failed!")
-  // The rest of your code...
+async function createNewCard(cardData) {
+  axios.post('https://your-web-server/cards', cardData)
+  .then((response) => {
+      if (response.ok === true) {
+          try {
+            // ... Your code ...
+              // The Card's ID from the server is required so that
+              // the Contract and the Server stay in sync
+              await gameContract.createCard(cardData.id, cardData.templateId, false)
+          } catch {
+              // Important! Here you must find way to a handle the edge case where
+              // the server-side player is created successfully, but the one in the
+              // Smart Contract fails! And vice versa
+              console.error("Problem occured in the Blockchain when creating new player");
+          }
+      }
+  })
+  .catch((error) => {
+      console.error(error);
+  });
 }
 ```
 
 <br />
-````
+**_Step #4_**:
+<br />
+Finally, call the transferCard(_seller, _buyer, _cardId) contract method above or below the point where you handle the Card's ownership swap.
+<br />
+
+```javascript
+async function changeCardOwner(_buyer, _seller, _cardId) {
+  axios.put('https://your-web-server/cards', {buyer: _buyer, seller: _seller, cardId: _cardId})
+  .then((response) => {
+      if (response.ok === true) {
+          try {
+            // ... Your code ...
+              // The Card's ID from the server is required so that
+              // the Contract and the Server stay in sync
+              await gameContract.transferCard(_buyer, _seller, _cardId)
+          } catch {
+              // Important! Here you must find way to a handle the edge case where
+              // the server-side player is created successfully, but the one in the
+              // Smart Contract fails! And vice versa
+              console.error("Problem occured in the Blockchain when creating new player");
+          }
+      }
+  })
+  .catch((error) => {
+      console.error(error);
+  });
+}
+```
