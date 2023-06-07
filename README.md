@@ -61,7 +61,7 @@ address and ABI you provided as arguments.
 <br />
 Create a **Service** Object and its **Events** in the Smart Contract.
 <br />
-For example, a Service could be: "MOOC" and one of its Events could be: "videoWathced"
+For example, a Service could be: "MOOC" and one of its Events could be: "videoWatched"
 <br />
 
 This step is a bit **tricky**, because it is not similar to how frontend development works.
