@@ -295,7 +295,7 @@ async function createNewCard(cardData) {
               // Important! Here you must find way to a handle the edge case where
               // the server-side player is created successfully, but the one in the
               // Smart Contract fails! And vice versa
-              console.error("Problem occured in the Blockchain when creating new player");
+              console.error("Problem occured in the Blockchain when creating new Card");
           }
       }
   })
@@ -326,7 +326,7 @@ async function changeCardOwner(_buyer, _seller, _cardId) {
               // Important! Here you must find way to a handle the edge case where
               // the server-side player is created successfully, but the one in the
               // Smart Contract fails! And vice versa
-              console.error("Problem occured in the Blockchain when creating new player");
+              console.error("Problem occured in the Blockchain when transfering the Card");
           }
       }
   })
