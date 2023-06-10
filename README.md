@@ -153,7 +153,7 @@ function sumbitComment() {
   // Supposing your Contract Instance name is "rewardContract"
   // This example uses ethers.js v5.7.2 syntax, but web3.js is very similar
   const { wasSuccessful } = await rewardContract.addPoints("MOOC", "videoWathced");
-<br />
+  
   if(!wasSuccessful) throw new Error("Contract Interaction Failed!")
   // The rest of your code...
 }
