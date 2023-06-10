@@ -10,7 +10,7 @@ GENERA Project: Web3 (Blockchain) Backend Logic
 <img src="https://www.solodev.com/file/3d5e1296-e69b-11ec-b9ad-0eaef3759f5f/OpenZeppelin-Logo-Icon.png" alt="OpenZeppelin" width="75" height="75" /> &nbsp;&nbsp; 
 <br />
 
-## What is a Smart Contract?
+## 📜 What is a Smart Contract? 
 
 A smart contract is a self-executing contract with terms of the agreement directly written into code.
 <br />
