@@ -22,6 +22,8 @@ It is typically built on blockchain technology, ensuring transparency, security,
 In simple terms, it's a piece of immutable code that lives on the blockchain that provides functionality.
 <br />
 Similar to a venting machine (Smart Contract) located in a park (Blockchain).
+<br />
+<br />
 
 ## Platform's Smart Contracts
 
@@ -49,7 +51,6 @@ Users can accumulate these tokens by performing specific actions or tasks.
 <br />
 
 #### For Devs 👨‍💻
-
 <br />
 
 **_Contract's API_**
@@ -96,7 +97,6 @@ Users can accumulate these tokens by performing specific actions or tasks.
   ```
 
   <br />
-
 **_How to use the Contract_**
 <br />
 
