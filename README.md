@@ -148,7 +148,7 @@ Finally, the only thing left to do is to call the contract's functions whenever 
 <br />
 
 ```javascript
-function sumbitComment() {
+async function sumbitComment() {
   // Your previous code...
   // Supposing your Contract Instance name is "rewardContract"
   // This example uses ethers.js v5.7.2 syntax, but web3.js is very similar
