@@ -1,6 +1,14 @@
 # Genera-SmartContracts
 
 GENERA Project: Web3 (Blockchain) Backend Logic
+<br />
+<br />
+
+<img src="https://static.vecteezy.com/system/resources/previews/010/841/683/original/3d-illustration-ethereum-logo-png.png" alt="Ethereum" width="75" height="75" /> &nbsp;&nbsp;&nbsp;&nbsp;
+<img src="https://cdn-icons-png.flaticon.com/512/6229/6229280.png" alt="SmartContract" width="75" height="75" /> &nbsp;&nbsp;&nbsp;&nbsp;
+<img src="https://spacenil.com/tutorial/public/uploads/categories/categories_1622741308.png" alt="Solidity" width="75" height="75" /> &nbsp;&nbsp; &nbsp;&nbsp;
+<img src="https://www.solodev.com/file/3d5e1296-e69b-11ec-b9ad-0eaef3759f5f/OpenZeppelin-Logo-Icon.png" alt="OpenZeppelin" width="75" height="75" /> &nbsp;&nbsp; 
+<br />
 
 ## What is a Smart Contract?
 
