@@ -2,17 +2,15 @@
 pragma solidity >=0.8.19 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract RewardingTool {
     // Contract Address (GENERA - Network): 0x300302fEc3D905eb66Cb7743C636F8741B72dB3a
     using SafeERC20 for IERC20;
 
-    IERC20 public token;
-    address public contractAddress;
-
     // -- Global Score - START
     uint public baseReward;
+    IERC20 public token;
     address public contractAddress;
 
     mapping(address => User) public users;
@@ -23,7 +21,7 @@ contract RewardingTool {
 
     // -- Global Score- END
 
-    constructor() {
+    constructor(IERC20 _token) {
         baseReward = 10; // Applying a default value
         contractAddress = address(this);
         token = _token;
@@ -146,7 +144,7 @@ contract RewardingTool {
     //       addPoints(             ,                      forum,  comment                 )
     function addPoints(
         string memory _serviceName,
-        string memory _eventName,
+        string memory _eventName
     ) public returns (bool) {
         User storage current_user = users[msg.sender];
         Service storage current_service = services[_serviceName]; // Get the Service from payload
@@ -181,7 +179,7 @@ contract RewardingTool {
         ServiceEvent storage current_event = current_service.events[_eventName]; // Get the Event from the Service and payload
 
         // 1. Increase User's Total Points
-        token.safeTransferFrom(msg.sender, contractAddress, reward);
+        token.safeTransferFrom(msg.sender, contractAddress, _reward);
         // current_user.totalPoints += _reward;
 
         // 2. Increase User's Service Points (For Statistic Reasons)
@@ -203,7 +201,7 @@ contract RewardingTool {
         string memory _serviceName
     ) public returns (bool) {
         User storage current_user = users[msg.sender]; // Get the User from his/her address
-
+        /*
         // 0. Get User's Total Points
         uint totalPoints = current_user.totalPoints;
 
@@ -220,7 +218,7 @@ contract RewardingTool {
             _productPrice,
             totalPoints
         );
-
+*/
         return true; // Indicates that the function was executed successfully
     }
 
@@ -246,8 +244,8 @@ contract RewardingTool {
 
         // 2. Intialize the new user's properties
         newUser.id = numUsers;
-        newUser.totalPoints = 0;
-        newUser.wallet = msg.sender;
+        // newUser.totalPoints = 0;
+        newUser.walletAddr = msg.sender;
         newUser.name = _name;
 
         emit UserCreation(numUsers, msg.sender, _name); // Emitting the corresponding Event
@@ -364,13 +362,13 @@ contract RewardingTool {
     }
 
     function viewUserPoints(address _userAddr) public view returns (uint) {
-        User storage current_user = users[_userAddr]; // Getting the requested user by using his/her wallet address
-        return current_user.totalPoints;
+        // User storage current_user = users[_userAddr]; // Getting the requested user by using his/her wallet address
+        return token.balanceOf(_userAddr);
     }
 
     function viewYourPoints() public view returns (uint) {
-        User storage you = users[msg.sender]; // Getting the requested user by using his/her wallet address
-        return you.totalPoints;
+        // User storage you = users[msg.sender]; // Getting the requested user by using his/her wallet address
+        return token.balanceOf(msg.sender);
     }
 
     // -- Getter Functions - END
