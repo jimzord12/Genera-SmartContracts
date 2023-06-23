@@ -2,20 +2,22 @@
 pragma solidity >=0.8.19 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./IOracle.sol";
 
 contract RewardingTool {
     // Contract Address (GENERA - Network): 0x300302fEc3D905eb66Cb7743C636F8741B72dB3a
-    using SafeERC20 for IERC20;
+    // using SafeERC20 for IERC20;
 
     // -- Global Score - START
     uint public baseReward;
     IERC20 public token;
-    Oracle oracle; // This contract provides randomness
+    IOracle public oracle; // This contract provides randomness
     address public contractAddress;
     address public erc20_addr;
 
     mapping(address => User) public users;
+    mapping(string => address) public userNames;
     mapping(string => Service) public services;
     mapping(uint => Product) public products;
 
@@ -25,12 +27,12 @@ contract RewardingTool {
 
     // -- Global Score- END
 
-    constructor(IERC20 _token, address _tokenAddress, address _oracleAddress) {
+    constructor(IERC20 _token, /*address _tokenAddress,*/ IOracle _oracle) {
         baseReward = 10; // Applying a default value
         contractAddress = address(this);
-        erc20_addr = _tokenAddress;
+        // erc20_addr = _tokenAddress;
         token = _token;
-        oracle = Oracle(_oracleAddress);
+        oracle = _oracle;
 
         // Just some automations cuz the contract is still under dev
         string[2] memory defaultServives = ["forum", "game"];
@@ -40,6 +42,7 @@ contract RewardingTool {
             "voteOnPost"
         ];
         uint8[3] memory defaultForumEventsMultis = [10, 3, 5];
+
         string[4] memory defaultGameEvents = [
             "TownHallUpgrade",
             "cardCreation",
@@ -113,6 +116,7 @@ contract RewardingTool {
         uint id;
         uint productId;
         bytes32 collectionHash; // keccak256(username + productId + 6-digit nonce)
+        bool isRedeemed;
     }
 
     struct User {
@@ -158,7 +162,8 @@ contract RewardingTool {
         uint reward = pointsCalc(current_event.rewardMulti);
 
         // 2. Increase User's Total Points
-        token.safeTransferFrom(msg.sender, contractAddress, reward);
+        token.transfer(msg.sender, reward);
+        // token.safeTransferFrom(msg.sender, contractAddress, reward);
         // current_user.totalPoints += reward;
 
         // 3. Increase User's Service Points (For Statistic Reasons)
@@ -183,7 +188,7 @@ contract RewardingTool {
         ServiceEvent storage current_event = current_service.events[_eventName]; // Get the Event from the Service and payload
 
         // 1. Increase User's Total Points
-        token.safeTransferFrom(msg.sender, contractAddress, _reward);
+        token.transfer(msg.sender, _reward);
         // current_user.totalPoints += _reward;
 
         // 2. Increase User's Service Points (For Statistic Reasons)
@@ -197,11 +202,14 @@ contract RewardingTool {
         return true; // Indicates that the function was executed successfully
     }
 
-    function productClaimer(uint _productId) external returns (uint32) {
+    function productClaimer(uint _productId) external payable returns (uint32) {
         // -1. >Frontend: Before, calling this function! Call Oracle and give it a random number, we need it for later.
 
         // 0. >Frontend: Make user complete an Auth Signing Challenge
-        require(_productId > 0 && products[_productId] != 0, "This product does not exist! You propably made a typo :)");
+        require(
+            _productId > 0 && products[_productId].id != 0,
+            "This product does not exist! You propably made a typo :)"
+        );
 
         // 1. Use sender's address to find the user
         User storage current_user = users[msg.sender];
@@ -210,27 +218,44 @@ contract RewardingTool {
         Product storage particular_product = products[_productId];
 
         // 3. Check if user can buy the Product
-        require(token.balanceOf(msg.sender) >= particular_product.price, "User can not afford this Product!");
+        require(
+            token.balanceOf(msg.sender) >= particular_product.price,
+            "User can not afford this Product!"
+        );
+        require(
+            msg.value >= particular_product.price,
+            " You sent insufficient funds"
+        );
 
         // 4. >Frontend: Ask the user to approve this contract to transfer the required tokens on his/her behalf.
 
-        // 5. If user can buy the Product and allows the contract to transfer token on his/her behalf, transfer the required amount of tokens (particular_product.price) from his/her account to the ERC-20 Contract. 
-        token.safeTransferFrom(msg.sender, erc20_addr, particular_product.price);
+        // 5. If user can buy the Product and allows the contract to transfer token on his/her behalf, transfer the required amount of tokens (particular_product.price) from his/her account to the ERC-20 Contract.
+
+        // token.transfer(msg.sender, erc20_addr, particular_product.price);
 
         // 6. Generate an 6-digit Nonce in order to create a "collectionHash"
         uint32 randomNonce = oracle.randomNumber();
 
         // 7. Craete the "collectionHash"
-        bytes32 _collectionHash = hashValues(current_user.name, particular_product.id, randomNonce);
+        bytes32 _collectionHash = hashValues(
+            current_user.name,
+            particular_product.id,
+            randomNonce
+        );
 
         // 8. Create the PendingProduct object
-        PendingProduct pendingProd = PendingProduct(numProducts, particular_product.id, _collectionHash);
+        PendingProduct memory pendingProd = PendingProduct(
+            numProducts,
+            particular_product.id,
+            _collectionHash,
+            false
+        );
 
         // 9. Store it to the User's pendingProducts array
         current_user.pendingProducts.push(pendingProd);
 
         // 10. Subtract the particular Product's amount by, if it is not Infinite
-        if(!particular_product.isInfinite) {
+        if (!particular_product.isInfinite) {
             uint32 temp_amount = particular_product.amount;
             require(!particular_product.isEmpty);
             temp_amount -= 1;
@@ -240,18 +265,18 @@ contract RewardingTool {
         // 11. Finally, return the random nonce to the UI so that the User can store it.
         // He/She will need to obtain the reward!
         return randomNonce;
-
     }
 
     /**
      * Future: Also add the product to the Event
      */
+    /*
     function redeemer(
         uint _productPrice,
         string memory _serviceName
     ) public returns (bool) {
         User storage current_user = users[msg.sender]; // Get the User from his/her address
-        /*
+        
         // 0. Get User's Total Points
         uint totalPoints = current_user.totalPoints;
 
@@ -268,8 +293,46 @@ contract RewardingTool {
             _productPrice,
             totalPoints
         );
-*/
+
         return true; // Indicates that the function was executed successfully
+    }
+*/
+
+    function redeemerValidator(
+        string memory _name,
+        uint32 _nonce,
+        uint _id,
+        uint _productId,
+        bytes32 _collectionHash
+    ) public returns (bool) {
+        require(bytes(_name).length > 0, "Username is required");
+        require(_productId > 0, "The inserted ID can not be zero");
+        require(_nonce > 0, "The Nonce can not be zero");
+        require(
+            _collectionHash.length > 10,
+            "The CollectionHash can not be less than 10"
+        );
+
+        bytes32 providedData = hashValues(_name, _productId, _nonce);
+        address user_address = userNames[_name];
+        User storage current_user = users[user_address];
+        PendingProduct[] storage pendingProducts = current_user.pendingProducts;
+        uint pendingProdsLen = pendingProducts.length;
+        // PendingProduct memory desiredProd;
+
+        if (providedData == _collectionHash) {
+            // 2. Loop through the User's pendingProducts array to find the pending Product
+            for (uint16 i = 0; i <= pendingProdsLen; i += 1) {
+                if (pendingProducts[i].id == _id) {
+                    // Deactivating the pending Product, so it can only be used once
+                    pendingProducts[i].isRedeemed = true;
+                    break;
+                }
+            }
+        } else {
+            return false;
+        }
+        return true;
     }
 
     function setBaseReward(uint _initValue) public returns (bool) {
@@ -291,6 +354,7 @@ contract RewardingTool {
 
         // 1. Intialize the new user by accessing the "users" mapping
         User storage newUser = users[msg.sender];
+        userNames[_name] = msg.sender;
 
         // 2. Intialize the new user's properties
         newUser.id = numUsers;
@@ -400,11 +464,16 @@ contract RewardingTool {
     }
 
     // Product Related Fucntions
-    function createProduct(uint _price, uint32 _amount, string memory _name, string memory _location) public returns (bool) {
-        require(_price > 0, "Price must be greater than 0")
-        require(_amount > 0, "Amount must be greater than 0")
-        require(bytes(_name).length > 0, "Name is required")
-        require(bytes(_location).length > 0, "Location is required")
+    function createProduct(
+        uint _price,
+        uint32 _amount,
+        string memory _name,
+        string memory _location
+    ) public returns (bool) {
+        require(_price > 0, "Price must be greater than 0");
+        require(_amount > 0, "Amount must be greater than 0");
+        require(bytes(_name).length > 0, "Name is required");
+        require(bytes(_location).length > 0, "Location is required");
 
         Product storage particular_product = products[numProducts];
 
@@ -414,52 +483,77 @@ contract RewardingTool {
         particular_product.name = _name;
         particular_product.location = _location;
 
-        emit ProductCreation(numProducts, _name, _price);
+        //TODO: This Event!!!
+        // emit ProductCreation(numProducts, _name, _price);
 
         numProducts += 1;
+
+        return true;
     }
 
     function updateProdPrice(uint _id, uint _price) public {
-        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
-        require(_price > 0, "Price must be greater than 0")
+        require(
+            _id > 0 && products[_id].id != 0,
+            "This product does not exist! You propably made a typo :)"
+        );
+        require(_price > 0, "Price must be greater than 0");
         Product storage particular_product = products[_id];
-        particular_product.price = _price;  
-
+        particular_product.price = _price;
     }
 
     function updateProdAmount(uint _id, uint32 _amount) public {
-        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
-        require(_amount > 0, "Amount must be greater than 0")
+        require(
+            _id > 0 && products[_id].id != 0,
+            "This product does not exist! You propably made a typo :)"
+        );
+        require(_amount > 0, "Amount must be greater than 0");
         Product storage particular_product = products[_id];
-        particular_product.amount = _amount;  
+        particular_product.amount = _amount;
     }
 
     function updateProdName(uint _id, string memory _name) public {
-        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
-        require(bytes(_name).length > 0, "Name is required")
+        require(
+            _id > 0 && products[_id].id != 0,
+            "This product does not exist! You propably made a typo :)"
+        );
+        require(bytes(_name).length > 0, "Name is required");
         Product storage particular_product = products[_id];
         particular_product.name = _name;
     }
 
     function updateProdLocation(uint _id, string memory _location) public {
-        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
-        require(bytes(_location).length > 0, "Location is required")
+        require(
+            _id > 0 && products[_id].id != 0,
+            "This product does not exist! You propably made a typo :)"
+        );
+        require(bytes(_location).length > 0, "Location is required");
         Product storage particular_product = products[_id];
         particular_product.location = _location;
     }
 
     function setProdToEmpty(uint _id, bool _option) public {
-        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
+        require(
+            _id > 0 && products[_id].id != 0,
+            "This product does not exist! You propably made a typo :)"
+        );
         Product storage particular_product = products[_id];
         particular_product.isEmpty = _option;
     }
+
     function setProdToInf(uint _id, bool _option) public {
-        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
+        require(
+            _id > 0 && products[_id].id != 0,
+            "This product does not exist! You propably made a typo :)"
+        );
         Product storage particular_product = products[_id];
         particular_product.isInfinite = _option;
     }
+
     function setDisableProduct(uint _id, bool _option) public {
-        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
+        require(
+            _id > 0 && products[_id].id != 0,
+            "This product does not exist! You propably made a typo :)"
+        );
         Product storage particular_product = products[_id];
         particular_product.isDisabled = _option;
     }
@@ -509,10 +603,13 @@ contract RewardingTool {
             keccak256(abi.encodePacked(string_2));
     }
 
-    function hashValues(string memory name, uint256 productId, uint nonce) public pure returns (bytes32) {
-    return keccak256(abi.encodePacked(name, productId, nonce));
-}
-
+    function hashValues(
+        string memory name,
+        uint256 productId,
+        uint nonce
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(name, productId, nonce));
+    }
 
     // -- Utility Functions - END
 }
