@@ -1,15 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.19 <0.9.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-
 contract RewardingTool {
     // Contract Address (GENERA - Network): 0x300302fEc3D905eb66Cb7743C636F8741B72dB3a
-    using SafeERC20 for IERC20;
-
-    IERC20 public token;
-    address public contractAddress;
 
     // -- Global Score - START
     uint public baseReward;
@@ -26,7 +19,6 @@ contract RewardingTool {
     constructor() {
         baseReward = 10; // Applying a default value
         contractAddress = address(this);
-        token = _token;
 
         // Just some automations cuz the contract is still under dev
         string[2] memory defaultServives = ["forum", "game"];
@@ -92,32 +84,11 @@ contract RewardingTool {
     // -- Events Section - END
 
     // -- Structs Section - START
-
-    struct Product {
-        // Ex. It can be a physical, real or digital redeemable reward (brelock, in-game currency, free musceum tickets
-        uint id;
-        uint price;
-        uint32 amount; // MAX_VALUE uint32, dec: 4,294,967,295 || hex: 0xFFFFFFFF
-        bool isEmpty;
-        bool isInfinite;
-        string name;
-        string location;
-    }
-
-    struct PendingProduct {
-        uint id;
-        uint productId;
-        address amount;
-        bytes32 collectionHash; // keccak256(username + productId + 6-digit nonce)
-        // Service => MGS Score Points (Ex. forum => 250)
-        mapping(string => uint) pointsPerService;
-    }
-
     struct User {
         uint id;
-        address walletAddr;
+        uint totalPoints;
+        address wallet;
         string name;
-        PendingProduct[] pendingProducts;
         // Service => MGS Score Points (Ex. forum => 250)
         mapping(string => uint) pointsPerService;
     }
@@ -140,13 +111,22 @@ contract RewardingTool {
         mapping(string => ServiceEvent) events; // Can be used for Statistics on the WebSite (Ex. 163.045 Points has been issued from  Comment Submitions
     }
 
+    struct Product {
+        // Ex. It can be a physical, real or digital redeemable reward (brelock, in-game currency, free musceum tickets
+        uint id;
+        uint price;
+        uint amount;
+        string name;
+        string location;
+    }
+
     // -- Structs Section - END
 
     // -- Actions - START
     //       addPoints(             ,                      forum,  comment                 )
     function addPoints(
         string memory _serviceName,
-        string memory _eventName,
+        string memory _eventName
     ) public returns (bool) {
         User storage current_user = users[msg.sender];
         Service storage current_service = services[_serviceName]; // Get the Service from payload
@@ -156,8 +136,7 @@ contract RewardingTool {
         uint reward = pointsCalc(current_event.rewardMulti);
 
         // 2. Increase User's Total Points
-        token.safeTransferFrom(msg.sender, contractAddress, reward);
-        // current_user.totalPoints += reward;
+        current_user.totalPoints += reward;
 
         // 3. Increase User's Service Points (For Statistic Reasons)
         current_user.pointsPerService[_serviceName] += reward;
@@ -180,14 +159,13 @@ contract RewardingTool {
         Service storage current_service = services[_serviceName]; // Get the Service from payload
         ServiceEvent storage current_event = current_service.events[_eventName]; // Get the Event from the Service and payload
 
-        // 1. Increase User's Total Points
-        token.safeTransferFrom(msg.sender, contractAddress, reward);
-        // current_user.totalPoints += _reward;
+        // 2. Increase User's Total Points
+        current_user.totalPoints += _reward;
 
-        // 2. Increase User's Service Points (For Statistic Reasons)
+        // 3. Increase User's Service Points (For Statistic Reasons)
         current_user.pointsPerService[_serviceName] += _reward;
 
-        // 3. Store the points conserning the specific Service & Event (For Statistic Reasons)
+        // 4. Store the points conserning the specific Service & Event (For Statistic Reasons)
         current_event.totalPoints += _reward;
 
         emit PointsGained(_to, _reward); // Emits the relevant event
