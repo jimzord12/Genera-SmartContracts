@@ -11,20 +11,26 @@ contract RewardingTool {
     // -- Global Score - START
     uint public baseReward;
     IERC20 public token;
+    Oracle oracle; // This contract provides randomness
     address public contractAddress;
+    address public erc20_addr;
 
     mapping(address => User) public users;
     mapping(string => Service) public services;
+    mapping(uint => Product) public products;
 
     uint public numUsers;
     uint public numServices;
+    uint public numProducts;
 
     // -- Global Score- END
 
-    constructor(IERC20 _token) {
+    constructor(IERC20 _token, address _tokenAddress, address _oracleAddress) {
         baseReward = 10; // Applying a default value
         contractAddress = address(this);
+        erc20_addr = _tokenAddress;
         token = _token;
+        oracle = Oracle(_oracleAddress);
 
         // Just some automations cuz the contract is still under dev
         string[2] memory defaultServives = ["forum", "game"];
@@ -98,6 +104,7 @@ contract RewardingTool {
         uint32 amount; // MAX_VALUE uint32, dec: 4,294,967,295 || hex: 0xFFFFFFFF
         bool isEmpty;
         bool isInfinite;
+        bool isDisabled;
         string name;
         string location;
     }
@@ -105,10 +112,7 @@ contract RewardingTool {
     struct PendingProduct {
         uint id;
         uint productId;
-        address amount;
         bytes32 collectionHash; // keccak256(username + productId + 6-digit nonce)
-        // Service => MGS Score Points (Ex. forum => 250)
-        mapping(string => uint) pointsPerService;
     }
 
     struct User {
@@ -191,6 +195,52 @@ contract RewardingTool {
         emit PointsGained(_to, _reward); // Emits the relevant event
 
         return true; // Indicates that the function was executed successfully
+    }
+
+    function productClaimer(uint _productId) external returns (uint32) {
+        // -1. >Frontend: Before, calling this function! Call Oracle and give it a random number, we need it for later.
+
+        // 0. >Frontend: Make user complete an Auth Signing Challenge
+        require(_productId > 0 && products[_productId] != 0, "This product does not exist! You propably made a typo :)");
+
+        // 1. Use sender's address to find the user
+        User storage current_user = users[msg.sender];
+
+        // 2. Use _productId to find the corresponding product
+        Product storage particular_product = products[_productId];
+
+        // 3. Check if user can buy the Product
+        require(token.balanceOf(msg.sender) >= particular_product.price, "User can not afford this Product!");
+
+        // 4. >Frontend: Ask the user to approve this contract to transfer the required tokens on his/her behalf.
+
+        // 5. If user can buy the Product and allows the contract to transfer token on his/her behalf, transfer the required amount of tokens (particular_product.price) from his/her account to the ERC-20 Contract. 
+        token.safeTransferFrom(msg.sender, erc20_addr, particular_product.price);
+
+        // 6. Generate an 6-digit Nonce in order to create a "collectionHash"
+        uint32 randomNonce = oracle.randomNumber();
+
+        // 7. Craete the "collectionHash"
+        bytes32 _collectionHash = hashValues(current_user.name, particular_product.id, randomNonce);
+
+        // 8. Create the PendingProduct object
+        PendingProduct pendingProd = PendingProduct(numProducts, particular_product.id, _collectionHash);
+
+        // 9. Store it to the User's pendingProducts array
+        current_user.pendingProducts.push(pendingProd);
+
+        // 10. Subtract the particular Product's amount by, if it is not Infinite
+        if(!particular_product.isInfinite) {
+            uint32 temp_amount = particular_product.amount;
+            require(!particular_product.isEmpty);
+            temp_amount -= 1;
+            if (temp_amount == 0) setProdToEmpty(particular_product.id, true);
+        }
+
+        // 11. Finally, return the random nonce to the UI so that the User can store it.
+        // He/She will need to obtain the reward!
+        return randomNonce;
+
     }
 
     /**
@@ -349,6 +399,71 @@ contract RewardingTool {
         return true; // Indicates that the function was executed successfully
     }
 
+    // Product Related Fucntions
+    function createProduct(uint _price, uint32 _amount, string memory _name, string memory _location) public returns (bool) {
+        require(_price > 0, "Price must be greater than 0")
+        require(_amount > 0, "Amount must be greater than 0")
+        require(bytes(_name).length > 0, "Name is required")
+        require(bytes(_location).length > 0, "Location is required")
+
+        Product storage particular_product = products[numProducts];
+
+        particular_product.id = numProducts;
+        particular_product.price = _price;
+        particular_product.amount = _amount;
+        particular_product.name = _name;
+        particular_product.location = _location;
+
+        emit ProductCreation(numProducts, _name, _price);
+
+        numProducts += 1;
+    }
+
+    function updateProdPrice(uint _id, uint _price) public {
+        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
+        require(_price > 0, "Price must be greater than 0")
+        Product storage particular_product = products[_id];
+        particular_product.price = _price;  
+
+    }
+
+    function updateProdAmount(uint _id, uint32 _amount) public {
+        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
+        require(_amount > 0, "Amount must be greater than 0")
+        Product storage particular_product = products[_id];
+        particular_product.amount = _amount;  
+    }
+
+    function updateProdName(uint _id, string memory _name) public {
+        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
+        require(bytes(_name).length > 0, "Name is required")
+        Product storage particular_product = products[_id];
+        particular_product.name = _name;
+    }
+
+    function updateProdLocation(uint _id, string memory _location) public {
+        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
+        require(bytes(_location).length > 0, "Location is required")
+        Product storage particular_product = products[_id];
+        particular_product.location = _location;
+    }
+
+    function setProdToEmpty(uint _id, bool _option) public {
+        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
+        Product storage particular_product = products[_id];
+        particular_product.isEmpty = _option;
+    }
+    function setProdToInf(uint _id, bool _option) public {
+        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
+        Product storage particular_product = products[_id];
+        particular_product.isInfinite = _option;
+    }
+    function setDisableProduct(uint _id, bool _option) public {
+        require(_id > 0 && products[_id] != 0, "This product does not exist! You propably made a typo :)")
+        Product storage particular_product = products[_id];
+        particular_product.isDisabled = _option;
+    }
+
     // -- CRUD Operations - END
 
     // -- Getter Functions - START
@@ -393,6 +508,11 @@ contract RewardingTool {
             keccak256(abi.encodePacked(string_1)) ==
             keccak256(abi.encodePacked(string_2));
     }
+
+    function hashValues(string memory name, uint256 productId, uint nonce) public pure returns (bytes32) {
+    return keccak256(abi.encodePacked(name, productId, nonce));
+}
+
 
     // -- Utility Functions - END
 }
