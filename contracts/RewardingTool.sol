@@ -26,6 +26,7 @@ contract RewardingTool is AccessControl {
     uint public numUsers;
     uint public numServices;
     uint public numProducts;
+    uint public numPendingProds;
 
     bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -129,6 +130,10 @@ contract RewardingTool is AccessControl {
         testProducts[1] = coffee;
         testProducts[2] = ticket;
         testProducts[3] = meal;
+
+        for (uint i = 0; i < testProducts.length; i++) {
+            products[i] = testProducts[i];
+        }
     }
 
     // -- Events Section - START
@@ -161,7 +166,9 @@ contract RewardingTool is AccessControl {
         uint indexed price,
         uint indexed amount,
         string location
-    ); // OK
+    ); //TODO: Test this!
+
+    event ProductAquired(uint indexed id, string indexed name); //TODO: Test this!
 
     // -- Events Section - END
 
@@ -290,17 +297,22 @@ contract RewardingTool is AccessControl {
         return true; // Indicates that the function was executed successfully
     }
 
-    function productClaimer(uint _productId) external returns (uint32) {
+    function productClaimer(uint _productId) external {
         // -1. >Frontend: Before, calling this function! Call Oracle and give it a random number, we need it for later.
 
         // 0. >Frontend: Make user complete an Auth Signing Challenge
-        require(
-            _productId > 0 && products[_productId].id != 0,
-            "This product does not exist! You propably made a typo :)"
-        );
+        // require(
+        //     _productId >= 0,
+        //     "This product does not exist! You propably made a typo :)"
+        // );
 
         // 1. Use sender's address to find the user
         User storage current_user = users[msg.sender];
+
+        require(
+            bytes(current_user.name).length > 0,
+            "You (the Tx sender), do not have an account, create one first."
+        );
 
         // 2. Use _productId to find the corresponding product
         Product storage particular_product = products[_productId];
@@ -310,10 +322,6 @@ contract RewardingTool is AccessControl {
             token.balanceOf(msg.sender) >= particular_product.price,
             "User can not afford this Product!"
         );
-        // require(
-        // msg.value >= particular_product.price,
-        //     " You sent insufficient funds"
-        // );
 
         // 4. >Frontend: Ask the user to approve this contract to transfer the required tokens on his/her behalf.
         /*
@@ -348,11 +356,13 @@ contract RewardingTool is AccessControl {
 
         // 8. Create the PendingProduct object
         PendingProduct memory pendingProd = PendingProduct(
-            numProducts,
+            numPendingProds,
             particular_product.id,
             _collectionHash,
             false
         );
+
+        numPendingProds += 1;
 
         // 9. Store it to the User's pendingProducts array
         current_user.pendingProducts.push(pendingProd);
@@ -365,9 +375,8 @@ contract RewardingTool is AccessControl {
             if (temp_amount == 0) setProdToEmpty(particular_product.id, true);
         }
 
-        // 11. Finally, return the random nonce to the UI so that the User can store it.
-        // He/She will need this code to obtain the reward! Tell the user to write it down
-        return randomNonce;
+        // 11. Finally, the random nonce will be sent to the UI (by Express server)so that the User can store it.
+        // He/She will need this code to obtain the reward! Tell the user to write it down.
     }
 
     /**
@@ -405,38 +414,48 @@ contract RewardingTool is AccessControl {
     function redeemerValidator(
         string memory _name,
         uint32 _nonce,
-        uint _id,
-        uint _productId,
-        bytes32 _collectionHash
-    ) public managerLevel returns (bool) {
+        uint _id
+    ) public managerLevel {
         require(bytes(_name).length > 0, "Username is required");
-        require(_productId > 0, "The inserted ID can not be zero");
         require(_nonce > 0, "The Nonce can not be zero");
-        require(
-            _collectionHash.length > 10,
-            "The CollectionHash can not be less than 10"
-        );
 
-        bytes32 providedData = hashValues(_name, _productId, _nonce);
+        // 1. We need to check if the function was executed successfully
+        bool result = false;
+
+        // 2. Finds the User's address using his/her username
         address user_address = userNames[_name];
-        User storage current_user = users[user_address];
-        PendingProduct[] storage pendingProducts = current_user.pendingProducts;
-        uint pendingProdsLen = pendingProducts.length;
-        // PendingProduct memory desiredProd;
 
-        if (providedData == _collectionHash) {
-            // 2. Loop through the User's pendingProducts array to find the pending Product
-            for (uint16 i = 0; i <= pendingProdsLen; i += 1) {
-                if (pendingProducts[i].id == _id) {
-                    // Deactivating the pending Product, so it can only be used once
+        // 3. Finds the User Object using his/her address
+        User storage current_user = users[user_address];
+
+        // 4. Gets the User's Pending Products
+        PendingProduct[] storage pendingProducts = current_user.pendingProducts;
+
+        // 5. Gets the length of the Pending Products array, to use it in a loop
+        uint pendingProdsLen = pendingProducts.length;
+
+        // 6. We loop through the Pending Products to find the one we desire (this choice is made by the Fronted)
+        for (uint16 i = 0; i <= pendingProdsLen; i += 1) {
+            if (pendingProducts[i].id == _id) {
+                // 1. Hashed the args to calculate the "CollectionHash"
+                bytes32 calculatedHash = hashValues(
+                    _name,
+                    pendingProducts[i].productId,
+                    _nonce
+                );
+                if (pendingProducts[i].collectionHash == calculatedHash) {
                     pendingProducts[i].isRedeemed = true;
-                    break;
+                    result = true;
                 }
             }
-        } else {
-            return false;
         }
-        return true;
+
+        require(
+            result == true,
+            "Something went wrong, Reward could not be granted."
+        );
+
+        emit ProductAquired(_id, _name);
     }
 
     function setBaseReward(uint _initValue) public onlyOwner returns (bool) {
@@ -692,6 +711,15 @@ contract RewardingTool is AccessControl {
     function viewYourPoints() public view returns (uint) {
         // User storage you = users[msg.sender]; // Getting the requested user by using his/her wallet address
         return token.balanceOf(msg.sender);
+    }
+
+    function viewYourUnclaimedProds()
+        public
+        view
+        returns (PendingProduct[] memory)
+    {
+        User storage you = users[msg.sender]; // Getting the requested user by using his/her wallet address
+        return you.pendingProducts;
     }
 
     // -- Getter Functions - END
