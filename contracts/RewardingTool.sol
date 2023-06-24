@@ -2,19 +2,21 @@
 pragma solidity >=0.8.19 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 // import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./IOracle.sol";
 
-contract RewardingTool {
+import "./IOracle.sol"; // Importing the Oracle's Interface
+
+contract RewardingTool is AccessControl {
     // Contract Address (GENERA - Network): 0x300302fEc3D905eb66Cb7743C636F8741B72dB3a
     // using SafeERC20 for IERC20;
 
     // -- Global Score - START
     uint public baseReward;
-    IERC20 public token;
-    IOracle public oracle; // This contract provides randomness
+    IERC20 private token; // This contract is our ERC-20 MGS Tokens
+    IOracle private oracle; // This contract provides randomness
     address public contractAddress;
-    address public erc20_addr;
+    // address public erc20_addr;
 
     mapping(address => User) public users;
     mapping(string => address) public userNames;
@@ -25,6 +27,9 @@ contract RewardingTool {
     uint public numServices;
     uint public numProducts;
 
+    bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+
     // -- Global Score- END
 
     constructor(IERC20 _token, /*address _tokenAddress,*/ IOracle _oracle) {
@@ -34,7 +39,11 @@ contract RewardingTool {
         token = _token;
         oracle = _oracle;
 
+        _setupRole(OWNER_ROLE, msg.sender);
+        _setupRole(MANAGER_ROLE, address(this));
+
         // Just some automations cuz the contract is still under dev
+        // Creating Services and ServiceEvents
         string[2] memory defaultServives = ["forum", "game"];
         string[3] memory defaultForumEvents = [
             "submitComment",
@@ -73,6 +82,53 @@ contract RewardingTool {
                 }
             }
         }
+
+        // Creating some Products
+        Product[4] memory testProducts;
+
+        // Defining some Products
+        Product memory ingameGold = createProduct(
+            10,
+            1,
+            "ToGameGoldConversion",
+            "N/A",
+            false,
+            true,
+            false
+        );
+        Product memory coffee = createProduct(
+            25,
+            30,
+            "Coffee",
+            "Paros",
+            false,
+            false,
+            false
+        );
+        Product memory ticket = createProduct(
+            50,
+            15,
+            "Ticket",
+            "Sifnos",
+            false,
+            false,
+            true
+        ); // This should not be visible to the user from the UI
+        Product memory meal = createProduct(
+            70,
+            1,
+            "Meal",
+            "Mykonos",
+            false,
+            false,
+            false
+        ); // This should get disabled once it someone claims it!
+
+        // Manual Array Elements Assignments
+        testProducts[0] = ingameGold;
+        testProducts[1] = coffee;
+        testProducts[2] = ticket;
+        testProducts[3] = meal;
     }
 
     // -- Events Section - START
@@ -82,19 +138,30 @@ contract RewardingTool {
         address indexed account,
         string indexed name
     ); // OK
+
     event ServiceCreation(uint indexed id, string indexed name); // OK
+
     event EventCreation(
         uint indexed id,
         string indexed name,
         string indexed serviceName
     ); // Ok
+
     event PointsGained(address indexed account, uint indexed amount); // OK
+
     event PointsRedeemed(
         address indexed account,
         string indexed serviceName,
         uint indexed _productPrice,
         uint _totalPoints_before
     ); // ok
+
+    event ProductCreation(
+        string indexed name,
+        uint indexed price,
+        uint indexed amount,
+        string location
+    ); // OK
 
     // -- Events Section - END
 
@@ -147,6 +214,27 @@ contract RewardingTool {
     }
 
     // -- Structs Section - END
+
+    // -- Modifiers Section - START
+
+    modifier onlyOwner() {
+        require(
+            hasRole(OWNER_ROLE, msg.sender),
+            "RewardingTool.sol: caller is not the Owner"
+        );
+        _;
+    }
+
+    modifier managerLevel() {
+        require(
+            hasRole(MANAGER_ROLE, msg.sender) ||
+                hasRole(OWNER_ROLE, msg.sender),
+            "RewardingTool.sol: caller is not a Manager or the Owner"
+        );
+        _;
+    }
+
+    // -- Modifiers Section - END
 
     // -- Actions - START
     //       addPoints(             ,                      forum,  comment                 )
@@ -202,7 +290,7 @@ contract RewardingTool {
         return true; // Indicates that the function was executed successfully
     }
 
-    function productClaimer(uint _productId) external payable returns (uint32) {
+    function productClaimer(uint _productId) external returns (uint32) {
         // -1. >Frontend: Before, calling this function! Call Oracle and give it a random number, we need it for later.
 
         // 0. >Frontend: Make user complete an Auth Signing Challenge
@@ -222,16 +310,31 @@ contract RewardingTool {
             token.balanceOf(msg.sender) >= particular_product.price,
             "User can not afford this Product!"
         );
-        require(
-            msg.value >= particular_product.price,
-            " You sent insufficient funds"
-        );
+        // require(
+        // msg.value >= particular_product.price,
+        //     " You sent insufficient funds"
+        // );
 
         // 4. >Frontend: Ask the user to approve this contract to transfer the required tokens on his/her behalf.
+        /*
+            Example Code:
+            // Create a new instance of the contract
+            const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, signer);
+
+            const amountToApprove = ethers.utils.parseUnits('10.0', 18); // Change the amount as needed, '18' is the typical number of decimal places for ERC-20 tokens
+
+            // Call the approve function
+            const approvalTx = await tokenContract.approve(spenderAddress, amountToApprove);
+
+            // Wait for it to be mined
+            setIsLoading(true); // For React Users
+            await approvalTx.wait();
+            console.log('Tokens approved');
+        */
 
         // 5. If user can buy the Product and allows the contract to transfer token on his/her behalf, transfer the required amount of tokens (particular_product.price) from his/her account to the ERC-20 Contract.
 
-        // token.transfer(msg.sender, erc20_addr, particular_product.price);
+        token.transferFrom(msg.sender, address(this), particular_product.price);
 
         // 6. Generate an 6-digit Nonce in order to create a "collectionHash"
         uint32 randomNonce = oracle.randomNumber();
@@ -254,7 +357,7 @@ contract RewardingTool {
         // 9. Store it to the User's pendingProducts array
         current_user.pendingProducts.push(pendingProd);
 
-        // 10. Subtract the particular Product's amount by, if it is not Infinite
+        // 10. Subtract the particular Product's amount by 1, if it is not Infinite
         if (!particular_product.isInfinite) {
             uint32 temp_amount = particular_product.amount;
             require(!particular_product.isEmpty);
@@ -263,7 +366,7 @@ contract RewardingTool {
         }
 
         // 11. Finally, return the random nonce to the UI so that the User can store it.
-        // He/She will need to obtain the reward!
+        // He/She will need this code to obtain the reward! Tell the user to write it down
         return randomNonce;
     }
 
@@ -298,13 +401,14 @@ contract RewardingTool {
     }
 */
 
+    // Met to be used by the personal who give out the Product/Rewards
     function redeemerValidator(
         string memory _name,
         uint32 _nonce,
         uint _id,
         uint _productId,
         bytes32 _collectionHash
-    ) public returns (bool) {
+    ) public managerLevel returns (bool) {
         require(bytes(_name).length > 0, "Username is required");
         require(_productId > 0, "The inserted ID can not be zero");
         require(_nonce > 0, "The Nonce can not be zero");
@@ -335,7 +439,7 @@ contract RewardingTool {
         return true;
     }
 
-    function setBaseReward(uint _initValue) public returns (bool) {
+    function setBaseReward(uint _initValue) public onlyOwner returns (bool) {
         baseReward = _initValue;
 
         return true; // Indicates that the function was executed successfully
@@ -372,7 +476,9 @@ contract RewardingTool {
         return true; // Indicates that the function was executed successfully
     }
 
-    function createService(string memory _serviceName) public returns (bool) {
+    function createService(
+        string memory _serviceName
+    ) public managerLevel returns (bool) {
         Service storage newService = services[_serviceName];
 
         require(bytes(newService.name).length == 0, "Service already exists");
@@ -390,7 +496,7 @@ contract RewardingTool {
 
     function createServiceInternal(
         string memory _serviceName
-    ) private returns (bool) {
+    ) private managerLevel returns (bool) {
         Service storage newService = services[_serviceName];
 
         require(bytes(newService.name).length == 0, "Service already exists");
@@ -409,7 +515,7 @@ contract RewardingTool {
         string memory _eventName,
         string memory _serviceName,
         uint64 _multiplier
-    ) public returns (bool) {
+    ) public managerLevel returns (bool) {
         Service storage current_service = services[_serviceName];
         ServiceEvent storage current_event = current_service.events[_eventName];
 
@@ -440,7 +546,7 @@ contract RewardingTool {
         string memory _eventName,
         string memory _serviceName,
         uint64 _multiplier
-    ) public returns (bool) {
+    ) public managerLevel returns (bool) {
         Service storage current_service = services[_serviceName];
         ServiceEvent storage current_event = current_service.events[_eventName];
 
@@ -468,8 +574,11 @@ contract RewardingTool {
         uint _price,
         uint32 _amount,
         string memory _name,
-        string memory _location
-    ) public returns (bool) {
+        string memory _location,
+        bool _isEmpty,
+        bool _isInfinite,
+        bool _isDisabled
+    ) public managerLevel returns (Product memory prod) {
         require(_price > 0, "Price must be greater than 0");
         require(_amount > 0, "Amount must be greater than 0");
         require(bytes(_name).length > 0, "Name is required");
@@ -482,16 +591,18 @@ contract RewardingTool {
         particular_product.amount = _amount;
         particular_product.name = _name;
         particular_product.location = _location;
+        particular_product.isEmpty = _isEmpty;
+        particular_product.isInfinite = _isInfinite;
+        particular_product.isDisabled = _isDisabled;
 
-        //TODO: This Event!!!
-        // emit ProductCreation(numProducts, _name, _price);
+        prod = particular_product;
+
+        emit ProductCreation(_name, _price, _amount, _location);
 
         numProducts += 1;
-
-        return true;
     }
 
-    function updateProdPrice(uint _id, uint _price) public {
+    function updateProdPrice(uint _id, uint _price) public managerLevel {
         require(
             _id > 0 && products[_id].id != 0,
             "This product does not exist! You propably made a typo :)"
@@ -501,7 +612,7 @@ contract RewardingTool {
         particular_product.price = _price;
     }
 
-    function updateProdAmount(uint _id, uint32 _amount) public {
+    function updateProdAmount(uint _id, uint32 _amount) public managerLevel {
         require(
             _id > 0 && products[_id].id != 0,
             "This product does not exist! You propably made a typo :)"
@@ -511,7 +622,7 @@ contract RewardingTool {
         particular_product.amount = _amount;
     }
 
-    function updateProdName(uint _id, string memory _name) public {
+    function updateProdName(uint _id, string memory _name) public managerLevel {
         require(
             _id > 0 && products[_id].id != 0,
             "This product does not exist! You propably made a typo :)"
@@ -521,7 +632,10 @@ contract RewardingTool {
         particular_product.name = _name;
     }
 
-    function updateProdLocation(uint _id, string memory _location) public {
+    function updateProdLocation(
+        uint _id,
+        string memory _location
+    ) public managerLevel {
         require(
             _id > 0 && products[_id].id != 0,
             "This product does not exist! You propably made a typo :)"
@@ -531,7 +645,7 @@ contract RewardingTool {
         particular_product.location = _location;
     }
 
-    function setProdToEmpty(uint _id, bool _option) public {
+    function setProdToEmpty(uint _id, bool _option) public managerLevel {
         require(
             _id > 0 && products[_id].id != 0,
             "This product does not exist! You propably made a typo :)"
@@ -540,7 +654,7 @@ contract RewardingTool {
         particular_product.isEmpty = _option;
     }
 
-    function setProdToInf(uint _id, bool _option) public {
+    function setProdToInf(uint _id, bool _option) public managerLevel {
         require(
             _id > 0 && products[_id].id != 0,
             "This product does not exist! You propably made a typo :)"
@@ -549,7 +663,7 @@ contract RewardingTool {
         particular_product.isInfinite = _option;
     }
 
-    function setDisableProduct(uint _id, bool _option) public {
+    function setDisableProduct(uint _id, bool _option) public managerLevel {
         require(
             _id > 0 && products[_id].id != 0,
             "This product does not exist! You propably made a typo :)"
@@ -582,8 +696,27 @@ contract RewardingTool {
 
     // -- Getter Functions - END
 
+    // -- AccessControl Functions - START
+
+    // Function to assign Manager access level category
+    function assignManagerRole(address account) public onlyOwner {
+        grantRole(MANAGER_ROLE, account);
+    }
+
+    // Function to assign Custom access level category
+    function assignRole(bytes32 _rule, address _account) public onlyOwner {
+        grantRole(_rule, _account);
+    }
+
+    // Function to create new Access level categoryies
+    function setupRole(bytes32 _rule, address _account) public onlyOwner {
+        _setupRole(_rule, _account);
+    }
+
+    // -- AccessControl Functions - END
+
     // -- Utility Functions - START
-    function pointsCalc(uint _multiplier) public view returns (uint) {
+    function pointsCalc(uint _multiplier) internal view returns (uint) {
         return baseReward * _multiplier;
     }
 
