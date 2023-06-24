@@ -3,6 +3,7 @@ pragma solidity >=0.8.19 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "hardhat/console.sol";
 // import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./IOracle.sol"; // Importing the Oracle's Interface
@@ -16,6 +17,7 @@ contract RewardingTool is AccessControl {
     IERC20 private token; // This contract is our ERC-20 MGS Tokens
     IOracle private oracle; // This contract provides randomness
     address public contractAddress;
+    address public owner;
     // address public erc20_addr;
 
     mapping(address => User) public users;
@@ -28,7 +30,8 @@ contract RewardingTool is AccessControl {
     uint public numProducts;
     uint public numPendingProds;
 
-    bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
+    // bytes32 public constant DEFAULT_ADMIN_ROLE =
+    //     keccak256("DEFAULT_ADMIN_ROLE");
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     // -- Global Score- END
@@ -37,10 +40,11 @@ contract RewardingTool is AccessControl {
         baseReward = 10; // Applying a default value
         contractAddress = address(this);
         // erc20_addr = _tokenAddress;
+        owner = msg.sender;
         token = _token;
         oracle = _oracle;
 
-        _setupRole(OWNER_ROLE, msg.sender);
+        _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MANAGER_ROLE, address(this));
 
         // Just some automations cuz the contract is still under dev
@@ -226,7 +230,7 @@ contract RewardingTool is AccessControl {
 
     modifier onlyOwner() {
         require(
-            hasRole(OWNER_ROLE, msg.sender),
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
             "RewardingTool.sol: caller is not the Owner"
         );
         _;
@@ -235,7 +239,7 @@ contract RewardingTool is AccessControl {
     modifier managerLevel() {
         require(
             hasRole(MANAGER_ROLE, msg.sender) ||
-                hasRole(OWNER_ROLE, msg.sender),
+                hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
             "RewardingTool.sol: caller is not a Manager or the Owner"
         );
         _;
@@ -370,7 +374,10 @@ contract RewardingTool is AccessControl {
         // 10. Subtract the particular Product's amount by 1, if it is not Infinite
         if (!particular_product.isInfinite) {
             uint32 temp_amount = particular_product.amount;
-            require(!particular_product.isEmpty);
+            require(
+                !particular_product.isEmpty,
+                "The specific Reward is out of Stock! Sorry!"
+            );
             temp_amount -= 1;
             if (temp_amount == 0) setProdToEmpty(particular_product.id, true);
         }
@@ -435,7 +442,7 @@ contract RewardingTool is AccessControl {
         uint pendingProdsLen = pendingProducts.length;
 
         // 6. We loop through the Pending Products to find the one we desire (this choice is made by the Fronted)
-        for (uint16 i = 0; i <= pendingProdsLen; i += 1) {
+        for (uint16 i = 0; i < pendingProdsLen; i += 1) {
             if (pendingProducts[i].id == _id) {
                 // 1. Hashed the args to calculate the "CollectionHash"
                 bytes32 calculatedHash = hashValues(
@@ -727,8 +734,8 @@ contract RewardingTool is AccessControl {
     // -- AccessControl Functions - START
 
     // Function to assign Manager access level category
-    function assignManagerRole(address account) public onlyOwner {
-        grantRole(MANAGER_ROLE, account);
+    function assignManagerRole(address _account) public onlyOwner {
+        grantRole(MANAGER_ROLE, _account);
     }
 
     // Function to assign Custom access level category
@@ -773,4 +780,7 @@ contract RewardingTool is AccessControl {
     }
 
     // -- Utility Functions - END
+    function checkOwnerRole(address _account) public view returns (bool) {
+        return hasRole(DEFAULT_ADMIN_ROLE, _account);
+    }
 }

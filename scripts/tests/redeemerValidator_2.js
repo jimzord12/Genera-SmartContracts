@@ -1,4 +1,5 @@
 const { ethers } = require("hardhat");
+const axios = require("axios");
 
 // 🧪 How to run the test! 🧪
 /*
@@ -6,8 +7,18 @@ const { ethers } = require("hardhat");
   2. open a new terminal (term_2): npx hardhat clean (Skip if no changes at Smart Contracts)
   3. term_2: npx hardhat compile (Skip if no changes at Smart Contracts)
   4. term_2: npx hardhat run --network localhost scripts/deployContracts.js
-  5. open a new terminal (term_3): npx hardhat run --network localhost scripts/tests/redeemerValidator_1.js
+  5. open a new terminal (term_3): npx hardhat run --network localhost scripts/tests/redeemerValidator_2.js
 */
+
+async function getRandomNumber() {
+  try {
+    const response = await axios.get("http://localhost:3033/random-number");
+    console.log(response.data.randomNumber);
+    return response.data.randomNumber;
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
 
 async function main() {
   // Hardhat's Local Node Provider
@@ -15,6 +26,8 @@ async function main() {
     "http://127.0.0.1:8545/" // HardHat Local's URL
     //   "http://83.212.81.174:8545" // GENERA's URL
   );
+
+  let randomNumber;
 
   // Easy and convenient way to get HardHat's Accoutnts
   const [deployer, mykonos] = await ethers.getSigners();
@@ -84,7 +97,7 @@ async function main() {
   }
 
   try {
-    const tx_1 = await RewardingContractWithSigner.connect(deployer).createUser(
+    const tx_1 = await RewardingContract_Mykonos.createUser(
       "Waiter_In_Mykonos"
     );
     console.log("TX_1.2, Creating a Manager (Waiter_In_Mykonos)...:  ");
@@ -131,8 +144,23 @@ async function main() {
 
   // Trying to Claim it...
   try {
+    console.log();
+    console.log("-----------------------------------------");
+    console.log("Waiting for the Random Number to be sent to the Oracle...");
+    console.log("-----------------------------------------");
+    console.log();
+
+    randomNumber = await getRandomNumber();
+    console.log();
+    console.log("-----------------------------------------");
+    console.log(`The Oracle's random number is: ${randomNumber}`);
+    console.log("-----------------------------------------");
+    console.log();
+
     const tx_2 = await RewardingContractWithSigner.productClaimer(3);
-    console.log("User (Souvlaki_Destroyer), Is trying to Claim Product #4:  ");
+    console.log(
+      "TX_2, User (Souvlaki_Destroyer), Is trying to Claim Product #4:  "
+    );
     console.log();
     console.log("-----------------------------------------");
     console.log(tx_2);
@@ -148,40 +176,99 @@ async function main() {
   // Trying to Claim it...
   const tx_3 = await RewardingContractWithSigner.viewYourUnclaimedProds();
   console.log(
-    "User (Souvlaki_Destroyer), Is viewing his/her Unclaimed Rewards:  ",
-    tx_3
+    "TX_3, User (Souvlaki_Destroyer), Is viewing his/her Unclaimed Rewards:  "
   );
   console.log();
+  console.log("-----------------------------------------");
+  console.log(tx_3);
+  console.log("-----------------------------------------");
+  console.log();
+
+  // Giving "Manager" Level Access to the Waiter in Mykonos
+  // (Souvlaki_Destroyer) happens to be the Contract's Owner xD
+  try {
+    const managerMaking = await RewardingContractWithSigner.assignManagerRole(
+      mykonos.address
+    );
+    console.log(
+      "TX_4, User (Souvlaki_Destroyer), Is trying Make (Mykonos) a Manager:  "
+    );
+    console.log();
+    console.log("-----------------------------------------");
+    console.log(managerMaking);
+    console.log("-----------------------------------------");
+    console.log();
+  } catch (error) {
+    const howIsOwner = await RewardingContractWithSigner.owner();
+    const roleChecking = await RewardingContractWithSigner.checkOwnerRole(
+      deployer
+    );
+    console.log(
+      "We got this error while (Souvlaki_Destroyer) was trying to (Make Mykonos a Manager): "
+    );
+    console.log();
+    console.log(error);
+    console.log();
+    console.log("-----------------------------------------");
+    console.log();
+    console.log("This is the Contract Owner: ", howIsOwner);
+    console.log("Does (Souvlaki_Destroyer) has Owner Role: ", roleChecking);
+  }
 
   // Trying to call redeemerValidator to confirm the Product and give it to User...
   try {
     const tx_2 = await RewardingContract_Mykonos.redeemerValidator(
       "Souvlaki_Destroyer",
-      123456,
+      randomNumber,
       0
     );
-    console.log("TX_2, Trying see if Waiter should give free meal:  ");
+    console.log("TX_5, Trying see if Waiter should give free meal:  ");
     console.log();
     console.log("-----------------------------------------");
     console.log(tx_2);
     console.log("-----------------------------------------");
     console.log();
+    // Wait for the transaction to be mined
+    const receipt = await tx_2.wait();
+    console.log("=== Transaction (1.1) was executed! ===");
+    console.log();
+    // Check the transaction status
+    if (receipt.status === 1) {
+      console.log();
+      console.log("=== User (Souvlaki_Destroyer) Can Enjoy The Meal! :D ===");
+      console.log();
+    } else {
+      console.log();
+      console.log("=== User (Souvlaki_Destroyer) Shall strave :'( ===");
+      console.log();
+    }
   } catch (error) {
+    const user_1 = await RewardingContract_Mykonos.userNames(
+      "Souvlaki_Destroyer"
+    );
+    const user_2 = await RewardingContract_Mykonos.userNames(
+      "Waiter_In_Mykonos"
+    );
     console.log(
       "We got this error while (Mykonos Waiter) was trying to (Validate User Reward): "
     );
     console.log();
     console.log(error);
     console.log();
+    console.log("-----------------------------------------");
+    console.log();
+    console.log("User 1: ", user_1);
+    console.log();
+    console.log("User 2: ", user_2);
+    console.log();
+    console.log("-----------------------------------------");
   }
 
   console.log("====== End of Test ======");
   console.log();
   console.log("|> Should get <|");
   console.log();
-  console.log(
-    "|> 1. Error: reverted with reason string 'RewardingTool.sol: caller is not a Manager or the Owner'"
-  );
+  console.log("|> 1. === User (Souvlaki_Destroyer) Can Enjoy The Meal! :D ===");
   console.log();
 }
 

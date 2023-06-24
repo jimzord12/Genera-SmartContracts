@@ -12,6 +12,7 @@
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.1",
     "@nomicfoundation/hardhat-ethers": "^3.0.2",
     "@openzeppelin/contracts": "^4.9.2",
+    "axios": "^1.4.0",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {

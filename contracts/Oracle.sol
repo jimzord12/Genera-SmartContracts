@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 contract Oracle {
-    uint32 public randomNumber;
+    uint32 public randomNumber = 123456;
 
     function updateRandomNumber(uint32 _randomNumber) public {
         // This function should have adequate controls to prevent unauthorized updates
