@@ -741,6 +741,35 @@ contract RewardingTool is AccessControl {
         return you.pendingProducts;
     }
 
+    function getUserProducts(
+        string memory _userName
+    ) public view returns (PendingProduct[] memory userPendingProducts) {
+        address currentUserAddr = userNames[_userName];
+        User storage currentUser = users[currentUserAddr];
+        require(
+            bytes(_userName).length > 0,
+            "getUserProducts: Invalid/Wrong Input"
+        );
+        require(
+            bytes(currentUser.name).length > 0,
+            "getUserProducts: User does not exist"
+        );
+
+        return currentUser.pendingProducts;
+    }
+
+    function getUserProducts(
+        address _userAddr
+    ) public view returns (PendingProduct[] memory userPendingProducts) {
+        User storage currentUser = users[_userAddr]; // Getting the requested user by
+        require(
+            bytes(currentUser.name).length > 0,
+            "getUserProducts: User does not exist"
+        );
+
+        return currentUser.pendingProducts;
+    }
+
     // -- Getter Functions - END
 
     // -- AccessControl Functions - START

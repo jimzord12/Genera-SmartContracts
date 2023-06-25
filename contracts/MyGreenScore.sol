@@ -5,26 +5,28 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract MyGreenScore is ERC20, AccessControl {
-    bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    // bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE"); // => 0xasdfioha9hdf934yda9d73y
+    address public owner;
 
     constructor() ERC20("MyGreenScore", "MGS") {
-        _setupRole(OWNER_ROLE, msg.sender);
-        // _setupRole(MANAGER_ROLE, address(this));
-
+        owner = msg.sender;
         _mint(address(this), 1000000 * (10 ** uint256(decimals()))); // This is how much the contract gets
-        _mint(msg.sender, 500 * (10 ** uint256(decimals()))); // This is the MGS Token that the Deployer gets
+        _mint(owner, 500 * (10 ** uint256(decimals()))); // This is the MGS Token that the Deployer gets
+
+        _setupRole(DEFAULT_ADMIN_ROLE, owner);
+        _setupRole(MANAGER_ROLE, address(this));
     }
 
     modifier onlyOwner() {
         require(
-            hasRole(OWNER_ROLE, msg.sender),
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
             "MyGreenScore: caller is not the owner"
         );
         _;
     }
 
-    function loadUpRewardingTool(address _addr) public onlyOwner {
+    function loadUpContract(address _addr) public onlyOwner {
         _mint(_addr, 2000000 * (10 ** uint256(decimals()))); // This is how much the Rewarding contract gets
     }
 
@@ -41,13 +43,13 @@ contract MyGreenScore is ERC20, AccessControl {
         grantRole(MANAGER_ROLE, account);
     }
 
-    // Function to assign Custom access level category
-    function assignRole(bytes32 _rule, address _account) public onlyOwner {
-        grantRole(_rule, _account);
-    }
+    // // Function to assign Custom access level category
+    // function assignRole(bytes32 _rule, address _account) public onlyOwner {
+    //     grantRole(_rule, _account);
+    // }
 
-    // Function to create new Access level categoryies
-    function setupRole(bytes32 _rule, address _account) public onlyOwner {
-        _setupRole(_rule, _account);
-    }
+    // TODO: Function to create new Access level categoryies
+    // function setupRole(bytes32 _rule, address _account) public onlyOwner {
+    //     _setupRole(_rule, _account);
+    // }
 }
