@@ -174,6 +174,12 @@ contract RewardingTool is AccessControl {
 
     event ProductAquired(uint indexed id, string indexed name); //TODO: Test this!
 
+    event ProductClaimed(
+        uint indexed id,
+        string indexed name,
+        uint indexed price
+    ); //TODO: Test this!
+
     // -- Events Section - END
 
     // -- Structs Section - START
@@ -382,6 +388,12 @@ contract RewardingTool is AccessControl {
             if (temp_amount == 0) setProdToEmpty(particular_product.id, true);
         }
 
+        emit ProductClaimed(
+            particular_product.id,
+            current_user.name,
+            particular_product.price
+        );
+
         // 11. Finally, the random nonce will be sent to the UI (by Express server)so that the User can store it.
         // He/She will need this code to obtain the reward! Tell the user to write it down.
     }
@@ -459,7 +471,7 @@ contract RewardingTool is AccessControl {
 
         require(
             result == true,
-            "Something went wrong, Reward could not be granted."
+            "Something went wrong, No Reward or Wrong Input Data."
         );
 
         emit ProductAquired(_id, _name);
