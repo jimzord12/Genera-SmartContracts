@@ -771,6 +771,15 @@ contract RewardingTool is AccessControl {
         return currentUser.pendingProducts;
     }
 
+    function getAllProducts() public view returns (Product[] memory) {
+        Product[] memory allProducts = new Product[](numProducts);
+        for (uint i = 0; i < numProducts; i++) {
+            allProducts[i] = products[i];
+        }
+
+        return allProducts;
+    }
+
     // -- Getter Functions - END
 
     // -- AccessControl Functions - START
