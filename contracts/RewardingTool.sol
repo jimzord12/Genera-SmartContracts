@@ -207,6 +207,7 @@ contract RewardingTool is AccessControl {
         uint id;
         address walletAddr;
         string name;
+        string accessLevel;
         PendingProduct[] pendingProducts;
         // Service => MGS Score Points (Ex. forum => 250)
         mapping(string => uint) pointsPerService;
@@ -777,6 +778,8 @@ contract RewardingTool is AccessControl {
     // Function to assign Manager access level category
     function assignManagerRole(address _account) public onlyOwner {
         grantRole(MANAGER_ROLE, _account);
+        User storage currentUser = users[_account];
+        currentUser.accessLevel = "manager";
     }
 
     // Function to assign Custom access level category
