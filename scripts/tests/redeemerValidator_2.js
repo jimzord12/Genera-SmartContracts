@@ -12,7 +12,7 @@ const axios = require("axios");
 
 async function getRandomNumber() {
   try {
-    const response = await axios.get("http://localhost:3033/random-number");
+    const response = await axios.get("http://localhost:3038/random-number");
     console.log(response.data.randomNumber);
     return response.data.randomNumber;
   } catch (error) {
@@ -33,7 +33,7 @@ async function main() {
   const [deployer, mykonos] = await ethers.getSigners();
 
   // Rewarding Tool's Address
-  const RewardingToolAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+  const RewardingToolAddress = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
   const MGSAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
   // Rewarding Tool's ABI
