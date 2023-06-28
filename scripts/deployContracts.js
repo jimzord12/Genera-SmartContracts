@@ -17,7 +17,7 @@ function formatTokenAmount(amount, decimals = 18, precision = 4) {
 }
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const [deployer, manager] = await ethers.getSigners();
 
   console.log();
   console.log("====== Commencing Contract Deployment ======");
@@ -135,7 +135,7 @@ async function main() {
 
   const oldBalance = await ERC20ContractInstance.balanceOf(deployer);
   console.log(
-    "| Account's Old MGS Balance: ",
+    "| Deployer's Old MGS Balance: ",
     formatTokenAmount(oldBalance),
     " MGS"
   );
@@ -145,22 +145,83 @@ async function main() {
   //   await ERC20ContractInstance.approve(RewardingToolAddress, amountToApprove);
   //   await ERC20ContractInstance.approve(RewardingToolAddress, amountToApprove);
   const RewardingContractWithSigner = RewardingToolContract.connect(deployer);
+  const RewardingContractWithManager = RewardingToolContract.connect(manager);
+
+  console.log();
+  console.log("-----------------------------------------------------------");
+  console.log();
+  console.log("Creating 2 User Objects inside the Rewarding Contract...");
+  console.log("   1. (Souvlaki_Destroyer): The Contracts' Deployer ");
+  console.log("   2. (Pizza_Manager): The HardHat's 2nd Account ");
+  console.log();
+  console.log("-----------------------------------------------------------");
+  console.log();
   await RewardingContractWithSigner.createUser("Souvlaki_Destroyer");
+  await RewardingContractWithManager.createUser("Pizza_Manager");
+  console.log();
+  console.log("-----------------------------------------------------------");
 
   const user = await RewardingContractWithSigner.users(deployer);
 
-  console.log("User: ", user);
+  // Note: Only the Owner can assign Managers!
+  console.log("-----------------------------------------------------------");
+  console.log();
+  console.log(
+    "Simulating that User: (Deployer) is performing the following actions:"
+  );
+  console.log("   1. (Forum) Comment Submission: 100 MGS");
+  console.log("   2. (Forum) Comment Voting: 30 MGS");
+  console.log("   3. (Forum) Post Voting: 50 MGS");
+  console.log();
+  console.log("-----------------------------------------------------------");
+  console.log();
+  console.log("User should have +180 more MGS Tokens...");
+  console.log();
+  console.log("-----------------------------------------------------------");
 
   await RewardingToolContractInstance.addPoints("forum", "submitComment");
   await RewardingToolContractInstance.addPoints("forum", "voteOnComment");
   await RewardingToolContractInstance.addPoints("forum", "voteOnPost");
 
   const newBalance = await ERC20ContractInstance.balanceOf(deployer);
+  console.log();
   console.log(
-    "| Account's New MGS Balance: ",
+    "| Deployer's New MGS Balance: ",
     formatTokenAmount(newBalance),
     " MGS"
   );
+  console.log();
+
+  console.log("*************************************************");
+  console.log();
+  console.log("====== Retrieving User Data ======");
+  console.log();
+  console.log("*************************************************");
+
+  await RewardingContractWithSigner.assignManagerRole(manager.address);
+
+  // Making the User with the address residing in the "manager" variable a Manager
+  const managerObj = await RewardingContractWithManager.users(manager);
+
+  // Owner
+  console.log();
+  console.log("User's Name: ", user[2]);
+  console.log("User's ID: ", ethers.getNumber(user[0]));
+  console.log("User's Address: ", user[1]);
+  console.log("User's Access Level: ", user[3] === "" ? "none" : user[3]);
+  console.log();
+  console.log("===============================================");
+
+  // Manager
+  console.log();
+  console.log("User's Name: ", managerObj[2]);
+  console.log("User's ID: ", ethers.getNumber(managerObj[0]));
+  console.log("User's Address: ", managerObj[1]);
+  console.log(
+    "User's Access Level: ",
+    managerObj[3] === "" ? "none" : managerObj[3]
+  );
+  console.log();
 
   return {
     ERC20ContractInstance,
