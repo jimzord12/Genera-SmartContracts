@@ -34,7 +34,7 @@ contract Services is AccessControl {
 
         // Just some automations cuz the contract is still under dev
         // Creating Services and ServiceEvents
-        string[2] memory defaultServives = ["forum", "game"];
+        string[3] memory defaultServives = ["forum", "game", "contract"];
         string[3] memory defaultForumEvents = [
             "submitComment",
             "voteOnComment",
@@ -50,7 +50,10 @@ contract Services is AccessControl {
         ];
         uint8[4] memory defaultGameEventsMultis = [10, 3, 5, 1];
 
-        for (uint i = 0; i < 2; i++) {
+        string[1] memory defaultContractEvents = ["userCreation"];
+        uint8[1] memory defaultContractEventsMultis = [1];
+
+        for (uint i = 0; i < 3; i++) {
             string memory service = defaultServives[i];
             createServiceInternal(service);
 
@@ -63,11 +66,19 @@ contract Services is AccessControl {
                     );
                 }
             } else if (areEqual(service, "game")) {
-                for (uint j = 0; j < 3; j++) {
+                for (uint j = 0; j < 4; j++) {
                     createEventInternal(
                         defaultGameEvents[j],
                         "game",
                         defaultGameEventsMultis[j]
+                    );
+                }
+            } else if (areEqual(service, "contract")) {
+                for (uint j = 0; j < 1; j++) {
+                    createEventInternal(
+                        defaultContractEvents[j],
+                        "contract",
+                        defaultContractEventsMultis[j]
                     );
                 }
             }

@@ -49,52 +49,76 @@ contract RewardingTool is AccessControl {
         _setupRole(MANAGER_ROLE, address(this));
 
         // Creating some Products
-        Product[4] memory testProducts;
+        Product[6] memory testProducts;
 
         // Defining some Products
-        Product memory ingameGold = createProduct(
-            10,
+        Product memory feta = createProduct(
+            1350, // Divide by 100 in Frontend
             1,
-            "ToGameGoldConversion",
-            "N/A",
-            false,
-            true,
-            false
+            "Crete-Cheese",
+            "Crete",
+            false, // isEmpty
+            false, // isInfinite
+            false // isDisabled
         );
-        Product memory coffee = createProduct(
-            25,
+        Product memory sausage = createProduct(
+            2500,
             30,
-            "Coffee",
-            "Paros",
-            false,
-            false,
-            false
+            "Mykonos-Sausage",
+            "Mykonos",
+            false, // isEmpty
+            false, // isInfinite
+            false // isDisabled
         );
-        Product memory ticket = createProduct(
-            50,
-            15,
-            "Ticket",
-            "Sifnos",
+        Product memory tickets = createProduct(
+            2860,
+            3,
+            "Acropolis-Tickets",
+            "Athens",
             false,
             false,
             true
         ); // This should not be visible to the user from the UI
-        Product memory meal = createProduct(
-            70,
-            1,
+        Product memory tour = createProduct(
+            3320,
+            2,
             "Meal",
             "Mykonos",
             false,
             false,
             false
         ); // This should get disabled once it someone claims it!
+        Product memory ingameGold = createProduct(
+            50,
+            1,
+            "Ticket",
+            "Sifnos",
+            false,
+            true,
+            false
+        ); // This should not be visible to the user from the UI
+        Product memory hotel = createProduct(
+            12750,
+            1,
+            "Meal",
+            "Mykonos",
+            true,
+            false,
+            false
+        ); // This should get disabled once it someone claims it!
 
         // Manual Array Elements Assignments
-        testProducts[0] = ingameGold;
-        testProducts[1] = coffee;
-        testProducts[2] = ticket;
-        testProducts[3] = meal;
+        testProducts[0] = feta;
+        testProducts[1] = sausage;
+        testProducts[2] = tickets;
+        testProducts[3] = tour;
+        testProducts[4] = ingameGold;
+        testProducts[5] = hotel;
 
+        // Inserting the products into the mapping
+        // 1. Created the products, one by one
+        // 2. Pushed them into an static array in memory
+        // 3. Used a for loop to get each product from the array and insert it into the mapping
         for (uint i = 0; i < testProducts.length; i++) {
             products[i] = testProducts[i];
         }
@@ -241,10 +265,11 @@ contract RewardingTool is AccessControl {
 
         // 2. Use _productId to find the corresponding product
         Product storage particular_product = products[_productId];
+        uint prod_price = (particular_product.price) * (10 ** 16);
 
         // 3. Check if user can buy the Product
         require(
-            token.balanceOf(msg.sender) >= particular_product.price,
+            token.balanceOf(msg.sender) >= prod_price,
             "User can not afford this Product!"
         );
 
@@ -267,7 +292,7 @@ contract RewardingTool is AccessControl {
 
         // 5. If user can buy the Product and allows the contract to transfer token on his/her behalf, transfer the required amount of tokens (particular_product.price) from his/her account to the ERC-20 Contract.
 
-        token.transferFrom(msg.sender, address(this), particular_product.price);
+        token.transferFrom(msg.sender, address(this), prod_price);
 
         // 6. Generate an 6-digit Nonce in order to create a "collectionHash"
         uint32 randomNonce = oracle.randomNumber();
@@ -306,7 +331,7 @@ contract RewardingTool is AccessControl {
         emit ProductClaimed(
             particular_product.id,
             current_user.name,
-            particular_product.price
+            prod_price
         );
 
         // 11. Finally, the random nonce will be sent to the UI (by Express server)so that the User can store it.
@@ -418,6 +443,8 @@ contract RewardingTool is AccessControl {
         // newUser.totalPoints = 0;
         newUser.walletAddr = msg.sender;
         newUser.name = _name;
+
+        addPoints("contract", "userCreation");
 
         emit UserCreation(numUsers, msg.sender, _name); // Emitting the corresponding Event
 
@@ -591,6 +618,10 @@ contract RewardingTool is AccessControl {
         }
 
         return allProducts;
+    }
+
+    function approveMeToSpent(uint amount) public {
+        token.approve(address(this), amount * (10 ** 18));
     }
 
     // -- Getter Functions - END

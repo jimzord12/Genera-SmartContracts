@@ -124,7 +124,28 @@ async function main() {
     "| RewardingTool was successfully deployed to:",
     RewardingToolAddress
   );
-  ERC20ContractInstance.loadUpContract(RewardingToolAddress);
+
+  // console.log(
+  //   "| Deployer's Old MGS Balance: ",
+  //   formatTokenAmount(oldBalance),W
+  //   " MGS"
+  // );
+
+  console.log("-----------------------------------------------------------");
+  console.log();
+  console.log("====== Loading Up the Rewarding Tool with Tokens... ======");
+  await ERC20ContractInstance.loadUpContract(RewardingToolAddress);
+  console.log();
+  console.log("-----------------------------------------------------------");
+  console.log();
+  const RT_MGS = await ERC20ContractInstance.balanceOf(RewardingToolAddress);
+  console.log(
+    "| Rewarding Tool's MGS Balance: ",
+    formatTokenAmount(RT_MGS),
+    " MGS"
+  );
+  console.log();
+  console.log("-----------------------------------------------------------");
 
   console.log();
   console.log("====== All Operations Completed Successfully! ======");
@@ -169,13 +190,16 @@ async function main() {
   console.log(
     "Simulating that User: (Deployer) is performing the following actions:"
   );
+  console.log(
+    "   1. (Contract) User Creation: 10 MGS - (This automatically, when a user is created"
+  );
   console.log("   1. (Forum) Comment Submission: 100 MGS");
   console.log("   2. (Forum) Comment Voting: 30 MGS");
   console.log("   3. (Forum) Post Voting: 50 MGS");
   console.log();
   console.log("-----------------------------------------------------------");
   console.log();
-  console.log("User should have +180 more MGS Tokens...");
+  console.log("User should have +190 more MGS Tokens...");
   console.log();
   console.log("-----------------------------------------------------------");
 

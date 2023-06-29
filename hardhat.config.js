@@ -11,6 +11,8 @@ module.exports = {
   networks: {
     localhost: {
       url: "http://127.0.0.1:8545",
+      gas: "auto", // Automatically estimate the gas and provide a buffer
+      gasPrice: "auto", // Automatically estimate the gas price
     },
   },
 };

@@ -12,7 +12,7 @@ contract MyGreenScore is ERC20, AccessControl {
     constructor() ERC20("MyGreenScore", "MGS") {
         owner = msg.sender;
         _mint(address(this), 1000000 * (10 ** uint256(decimals()))); // This is how much the contract gets
-        _mint(owner, 500 * (10 ** uint256(decimals()))); // This is the MGS Token that the Deployer gets
+        _mint(owner, 50000 * (10 ** uint256(decimals()))); // This is the MGS Token that the Deployer gets
 
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MANAGER_ROLE, address(this));
