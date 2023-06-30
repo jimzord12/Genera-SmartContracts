@@ -238,7 +238,7 @@ contract RewardingTool is AccessControl {
         uint _reward
     ) public managerLevel returns (bool) {
         // 1. Increase User's Total Points
-        token.transfer(msg.sender, _reward);
+        token.transfer(_to, _reward * (10 ** 18));
         // current_user.totalPoints += _reward;
 
         emit PointsGained(_to, _reward); // Emits the relevant event
@@ -319,13 +319,13 @@ contract RewardingTool is AccessControl {
 
         // 10. Subtract the particular Product's amount by 1, if it is not Infinite
         if (!particular_product.isInfinite) {
-            uint32 temp_amount = particular_product.amount;
             require(
                 !particular_product.isEmpty,
                 "The specific Reward is out of Stock! Sorry!"
             );
-            temp_amount -= 1;
-            if (temp_amount == 0) setProdToEmpty(particular_product.id, true);
+            particular_product.amount -= 1;
+            if (particular_product.amount == 0)
+                setProdToEmpty(particular_product.id, true);
         }
 
         emit ProductClaimed(

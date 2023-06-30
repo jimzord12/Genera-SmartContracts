@@ -125,6 +125,25 @@ async function main() {
     RewardingToolAddress
   );
 
+  // Write the contracts' addresses to a JSON file
+  const contractAddresses = {
+    ERC20ContractAddress: ERC20ContractAddress,
+    OracleContractAddress: OracleContractAddress,
+    ServicesContractAddress: ServicesContractAddress,
+    RewardingToolAddress: RewardingToolAddress,
+  };
+
+  fs.writeFileSync(
+    path.resolve(__dirname, "../deployedContracts.json"),
+    JSON.stringify(contractAddresses, null, 2)
+  );
+
+  console.log();
+  console.log("-----------------------------------------------------------");
+  console.log("✅ Contract addresses written to 'deployedContracts.json'.");
+  console.log("-----------------------------------------------------------");
+  console.log();
+
   // console.log(
   //   "| Deployer's Old MGS Balance: ",
   //   formatTokenAmount(oldBalance),W
