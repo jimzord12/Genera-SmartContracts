@@ -490,30 +490,18 @@ contract RewardingTool is AccessControl {
     }
 
     function updateProdPrice(uint _id, uint _price) public managerLevel {
-        require(
-            _id > 0 && products[_id].id != 0,
-            "This product does not exist! You propably made a typo :)"
-        );
         require(_price > 0, "Price must be greater than 0");
         Product storage particular_product = products[_id];
         particular_product.price = _price;
     }
 
     function updateProdAmount(uint _id, uint32 _amount) public managerLevel {
-        require(
-            _id > 0 && products[_id].id != 0,
-            "This product does not exist! You propably made a typo :)"
-        );
         require(_amount > 0, "Amount must be greater than 0");
         Product storage particular_product = products[_id];
         particular_product.amount = _amount;
     }
 
     function updateProdName(uint _id, string memory _name) public managerLevel {
-        require(
-            _id > 0 && products[_id].id != 0,
-            "This product does not exist! You propably made a typo :)"
-        );
         require(bytes(_name).length > 0, "Name is required");
         Product storage particular_product = products[_id];
         particular_product.name = _name;
@@ -523,38 +511,23 @@ contract RewardingTool is AccessControl {
         uint _id,
         string memory _location
     ) public managerLevel {
-        require(
-            _id > 0 && products[_id].id != 0,
-            "This product does not exist! You propably made a typo :)"
-        );
         require(bytes(_location).length > 0, "Location is required");
         Product storage particular_product = products[_id];
         particular_product.location = _location;
     }
 
-    function setProdToEmpty(uint _id, bool _option) public managerLevel {
-        require(
-            _id > 0 && products[_id].id != 0,
-            "This product does not exist! You propably made a typo :)"
-        );
+    function setProdToEmpty(uint _id, bool _option) public {
         Product storage particular_product = products[_id];
         particular_product.isEmpty = _option;
+        particular_product.isDisabled = true;
     }
 
     function setProdToInf(uint _id, bool _option) public managerLevel {
-        require(
-            _id > 0 && products[_id].id != 0,
-            "This product does not exist! You propably made a typo :)"
-        );
         Product storage particular_product = products[_id];
         particular_product.isInfinite = _option;
     }
 
     function setDisableProduct(uint _id, bool _option) public managerLevel {
-        require(
-            _id > 0 && products[_id].id != 0,
-            "This product does not exist! You propably made a typo :)"
-        );
         Product storage particular_product = products[_id];
         particular_product.isDisabled = _option;
     }
@@ -599,17 +572,17 @@ contract RewardingTool is AccessControl {
         return currentUser.pendingProducts;
     }
 
-    function getUserProducts(
-        address _userAddr
-    ) public view returns (PendingProduct[] memory userPendingProducts) {
-        User storage currentUser = users[_userAddr]; // Getting the requested user by
-        require(
-            bytes(currentUser.name).length > 0,
-            "getUserProducts: User does not exist"
-        );
+    // function getUserProducts(
+    //     address _userAddr
+    // ) public view returns (PendingProduct[] memory userPendingProducts) {
+    //     User storage currentUser = users[_userAddr]; // Getting the requested user by
+    //     require(
+    //         bytes(currentUser.name).length > 0,
+    //         "getUserProducts: User does not exist"
+    //     );
 
-        return currentUser.pendingProducts;
-    }
+    //     return currentUser.pendingProducts;
+    // }
 
     function getAllProducts() public view returns (Product[] memory) {
         Product[] memory allProducts = new Product[](numProducts);
@@ -622,6 +595,12 @@ contract RewardingTool is AccessControl {
 
     function approveMeToSpent(uint amount) public {
         token.approve(address(this), amount * (10 ** 18));
+    }
+
+    function getPendingProducts(
+        address _userAddress
+    ) public view returns (PendingProduct[] memory) {
+        return users[_userAddress].pendingProducts;
     }
 
     // -- Getter Functions - END
