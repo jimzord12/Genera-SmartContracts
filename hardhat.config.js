@@ -14,5 +14,15 @@ module.exports = {
       gas: "auto", // Automatically estimate the gas and provide a buffer
       gasPrice: "auto", // Automatically estimate the gas price
     },
+    genera: {
+      url: "http://83.212.81.174:8545",
+      chainId: 20231,
+      accounts: [
+        process.env.ADMIN_PRIVATE_KEY,
+        process.env.MANAGER_PRIVATE_KEY,
+      ], // Set your private key here
+      gas: "auto", // Automatically estimate the gas and provide a buffer
+      gasPrice: "auto", // Automatically estimate the gas price
+    },
   },
 };
