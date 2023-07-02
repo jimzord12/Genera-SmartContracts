@@ -55,7 +55,7 @@ contract RewardingTool is AccessControl {
         Product memory feta = createProduct(
             1350, // Divide by 100 in Frontend
             1,
-            "Crete-Cheese",
+            "Feta Cheese",
             "Crete",
             false, // isEmpty
             false, // isInfinite
@@ -64,7 +64,7 @@ contract RewardingTool is AccessControl {
         Product memory sausage = createProduct(
             2500,
             30,
-            "Mykonos-Sausage",
+            "Traditional Sausage",
             "Mykonos",
             false, // isEmpty
             false, // isInfinite
@@ -73,7 +73,7 @@ contract RewardingTool is AccessControl {
         Product memory tickets = createProduct(
             2860,
             3,
-            "Acropolis-Tickets",
+            "Acropolis Tickets",
             "Athens",
             false,
             false,
@@ -82,8 +82,8 @@ contract RewardingTool is AccessControl {
         Product memory tour = createProduct(
             3320,
             2,
-            "Meal",
-            "Mykonos",
+            "Guided Tour",
+            "Tinos",
             false,
             false,
             false
@@ -91,8 +91,8 @@ contract RewardingTool is AccessControl {
         Product memory ingameGold = createProduct(
             50,
             1,
-            "Ticket",
-            "Sifnos",
+            "In-Game Gold",
+            "Cyber Space",
             false,
             true,
             false
@@ -100,8 +100,8 @@ contract RewardingTool is AccessControl {
         Product memory hotel = createProduct(
             12750,
             1,
-            "Meal",
-            "Mykonos",
+            "Hotel Accommodations",
+            "Paros",
             true,
             false,
             false

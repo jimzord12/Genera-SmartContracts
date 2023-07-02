@@ -99,14 +99,19 @@ async function main() {
 
   try {
     const createUser_Tx = await RewardingToolContractInstance.connect(
-      anotherUser
+      simpleUser
     ).createUser(username);
 
     console.log(`====== Creating User: (${username}... ======`);
     console.log();
-    console.log(`====== With Address: (${anotherUser} (Hard-Coded!)... ======`);
+    console.log(`====== With Address: (${simpleUser} (Hard-Coded!)... ======`);
 
     await createUser_Tx.wait();
+
+    const userDetails = await getUserDetails(
+      username,
+      RewardingToolContractInstance.connect(simpleUser)
+    );
 
     console.log("-----------------------------------------------------------");
     console.log();
@@ -118,6 +123,80 @@ async function main() {
     console.log("-----------------------------------------------------------");
     console.log();
     console.log(error);
+  }
+}
+
+async function getUserDetails(username, contract) {
+  console.log("-----------------------------------------------------------");
+  console.log();
+  console.log(`====== Fetching User's #(${username})... ======`);
+
+  const userAddress = await contract.userNames(username);
+  const userDetails = await contract.users(userAddress);
+
+  if (userDetails[2] === "") {
+    console.log();
+    console.log(" ❌ ⛔ ❌ ⛔ ❌ ⛔ ❌ ⛔ ❌ ⛔ ❌ ⛔ ❌ ⛔ ");
+    console.log();
+    throw new Error("This User doesn't exist, you probably made a typo 😋");
+  }
+
+  const userPendingProds = await contract.getPendingProducts(userAddress);
+
+  const convertedRawData = userPendingProds.map((pendingProd) => {
+    return {
+      pendindProdID: Number(pendingProd[0]),
+      prodID: Number(pendingProd[1]),
+      collectionHash: pendingProd[2],
+      isRedeemed: pendingProd[3],
+    };
+  });
+
+  //   Converting Data to more human-readable format
+  let convertedData = {
+    id: Number(userDetails[0]),
+    address: userDetails[1],
+    name: userDetails[2],
+    accessLevel: userDetails[3],
+    pendingRewards: convertedRawData,
+  };
+
+  console.log(
+    `====== Fetching User's #(${username} Pending Products... ======`
+  );
+
+  //   console.log();
+  //   console.log("-----------------------------------------------------------");
+  //   console.log();
+  //   console.log(userDetails);
+  //   console.log();
+  //   console.log("-----------------------------------------------------------");
+
+  console.log();
+  console.log("-----------------------------------------------------------");
+  console.log();
+  console.log(convertedData);
+  console.log();
+  console.log("-----------------------------------------------------------");
+
+  function consolidateRewards(convertedData) {
+    let consolidatedRewards = {};
+
+    convertedData.forEach((reward) => {
+      if (consolidatedRewards[reward.prodID]) {
+        consolidatedRewards[reward.prodID].amount += 1;
+      } else {
+        consolidatedRewards[reward.prodID] = {
+          productID: reward.prodID,
+          amount: 1,
+        };
+      }
+    });
+
+    // convert the object to an array
+    consolidatedRewards = Object.values(consolidatedRewards);
+
+    return consolidatedRewards;
   }
 }
 
