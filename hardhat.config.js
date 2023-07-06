@@ -24,5 +24,15 @@ module.exports = {
       gas: "auto", // Automatically estimate the gas and provide a buffer
       gasPrice: "auto", // Automatically estimate the gas price
     },
+    generaHttps: {
+      url: "https://snf-34965.ok-kno.grnetcloud.net",
+      chainId: 20231,
+      accounts: [
+        process.env.ADMIN_PRIVATE_KEY,
+        process.env.MANAGER_PRIVATE_KEY,
+      ], // Set your private key here
+      gas: "auto", // Automatically estimate the gas and provide a buffer
+      gasPrice: "auto", // Automatically estimate the gas price
+    },
   },
 };
