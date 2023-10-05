@@ -26,6 +26,34 @@ async function main() {
 
   console.log();
   console.log("====== Commencing Contract Deployment ======");
+  console.log();
+  console.log("==> Running on network:", hre.network.name);
+  console.log();
+  console.log("==> The Deployer Address is: ", await deployer.getAddress());
+
+  const deployerBalance = await ethers.provider.getBalance(deployer.address);
+
+  console.log();
+  console.log(
+    "- How much ETH does the Deployer have? : ",
+    ethers.formatEther(deployerBalance),
+    "ETH"
+  );
+  console.log();
+  console.log(
+    "- Does the Deployer require Spending Money? : ",
+    ethers.formatEther(deployerBalance) <= 5
+  );
+  console.log();
+  console.log(
+    "- Am I bored tp send some ETH from my Mobile -> Web Server Wallet? : ",
+    true
+  );
+  console.log();
+  console.log(
+    "- Should I kindly ask Niko to send some ? -> Web Server Wallet?: ",
+    true
+  );
 
   // Deploy ERC-20
   console.log();
@@ -130,7 +158,7 @@ async function main() {
     RewardingToolAddress
   );
 
-  // Write the contracts' addresses to a JSON file
+  // Part 1: Write the contracts' addresses to a JSON file
   const contractAddresses = {
     ERC20ContractAddress: ERC20ContractAddress,
     OracleContractAddress: OracleContractAddress,
@@ -138,6 +166,7 @@ async function main() {
     RewardingToolAddress: RewardingToolAddress,
   };
 
+  // Part 2: Write the contracts' addresses to a JSON file
   fs.writeFileSync(
     path.resolve(__dirname, "../deployedContracts.json"),
     JSON.stringify(contractAddresses, null, 2)
@@ -202,7 +231,7 @@ async function main() {
   console.log("-----------------------------------------------------------");
   console.log();
   await RewardingContractWithSigner.createUser("Souvlaki_Destroyer");
-  await RewardingContractWithManager.createUser("Pizza_Manager");
+  await RewardingContractWithManager.createUser("Pizza_Manager"); // TODO: Manager Needs CASH!
   console.log();
   console.log("-----------------------------------------------------------");
 
