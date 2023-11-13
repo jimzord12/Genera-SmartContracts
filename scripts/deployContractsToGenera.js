@@ -45,15 +45,6 @@ async function main() {
     ethers.formatEther(deployerBalance) <= 5
   );
   console.log();
-  console.log(
-    "- Am I bored tp send some ETH from my Mobile -> Web Server Wallet? : ",
-    true
-  );
-  console.log();
-  console.log(
-    "- Should I kindly ask Niko to send some ? -> Web Server Wallet?: ",
-    true
-  );
 
   // Deploy ERC-20
   console.log();
@@ -177,12 +168,6 @@ async function main() {
   console.log("✅ Contract addresses written to 'deployedContracts.json'.");
   console.log("-----------------------------------------------------------");
   console.log();
-
-  // console.log(
-  //   "| Deployer's Old MGS Balance: ",
-  //   formatTokenAmount(oldBalance),W
-  //   " MGS"
-  // );
 
   console.log("-----------------------------------------------------------");
   console.log();
