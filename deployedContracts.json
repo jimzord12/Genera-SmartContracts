@@ -1,0 +1,7 @@
+{
+  "ERC20ContractAddress": "0x7384B00F5702Dd5d9d7cb08DC303f2534D46D3Db",
+  "OracleContractAddress": "0xdF791bf449B2D5020285DC01c42410454281c2e8",
+  "ServicesContractAddress": "0x5eEb3cD8B18F3BBb2F59e64b5756dE66EFa37aac",
+  "RewardingToolAddress": "0x453439ad01F311097fFa96cC33C4001e6834c2c6",
+  "GameManagerAddress": "0x9B3fcEB7bf97fD38FA0FE71250b0cb45b0cE6942"
+}
